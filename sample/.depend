@@ -1,0 +1,8 @@
+main.o: main.cpp ../include/FastCgi.h ../include/FastCgiRequest.h \
+ ../include/FastCgiResponse.h
+FastCgi.o: ../src/FastCgi.cpp ../include/FastCgi.h \
+ ../include/FastCgiRequest.h ../include/FastCgiResponse.h \
+ ../src/FastCgiSerialize.h ../include/FastCgiRequest.h \
+ ../include/FastCgiResponse.h
+FastCgiSerialize.o: ../src/FastCgiSerialize.cpp ../src/FastCgiSerialize.h \
+ ../include/FastCgiRequest.h ../include/FastCgiResponse.h
