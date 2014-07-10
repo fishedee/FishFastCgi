@@ -12,12 +12,37 @@ using namespace std;
 
 FastCgiSerialize::FastCgiSerialize( int socket ){
 	m_socket = socket;
-	m_readBufferPos = m_writeBufferPos = 0;
-	m_readBufferSize = m_writeBufferSize = 0;
+	m_readBufferSize = m_readBufferPos  = 0;
+	m_writeBufferSize = FCGI_MAX_WRITE_BUFFER_SIZE;
+	m_writeBufferPos = 0;
 }
 FastCgiSerialize::~FastCgiSerialize(){
+	WriteFlush();
 }
-int32_t FastCgiSerialize::DeSerializeRequestItem( FCGI_Header*& header , void*& body ){
+int32_t FastCgiSerialize::WriteResponseItem( FCGI_Header* header , void* body ){
+	int32_t iRet;
+	if( header->type == FCGI_STDOUT ){
+		iRet = SerializeStdOut( header , body );
+	}else if( header->type == FCGI_STDERR ){
+		iRet = SerializeStdErr( header , body );
+	}else if( header->type == FCGI_DATA ){
+		iRet = SerializeData( header ,body );
+	}else if( header->type == FCGI_END_REQUEST ){
+		iRet = SerializeEndRequest( header ,body );
+	}else{
+		LogMsg("Unknown header type!");
+		return 1;
+	}
+	if( iRet != 0 ){
+		LogMsg("SerializeItem Error! " + to_string(header->type));
+		return iRet;
+	}
+	return 0;
+}
+int32_t FastCgiSerialize::FinishResponseItem(){
+	return WriteFlush();
+}
+int32_t FastCgiSerialize::ReadRequestItem( FCGI_Header*& header , void*& body ){
 	int32_t iRet;
 	//反序列化头部开头
 	iRet = DeSerializeHeader(header);
@@ -47,13 +72,79 @@ int32_t FastCgiSerialize::DeSerializeRequestItem( FCGI_Header*& header , void*& 
 	
 	return 0;
 }
-int32_t FastCgiSerialize::FreeRequestItem( FCGI_Header*& header , void*& body ){
+int32_t FastCgiSerialize::FreeRequestItem( FCGI_Header*& header , void*& body ){	
+	if( header->type == FCGI_BEGIN_REQUEST ){
+		free(body);
+	}else if( header->type == FCGI_PARAMS ){
+		FCGI_ParamsBody* paramBody = (FCGI_ParamsBody*)body;
+		FCGI_ParamsBody* nextParamBody;
+		for( ; paramBody != NULL ; paramBody = nextParamBody ){
+			nextParamBody = paramBody->next;
+			free(paramBody->param.nameData);
+			free(paramBody->param.valueData);
+			free(paramBody);
+		}
+	}else if( header->type == FCGI_STDIN ){
+		FCGI_StdInBody* stdinBody = (FCGI_StdInBody*)body;
+		free(stdinBody->buffer);
+		free(stdinBody);
+	}else if( header->type == FCGI_DATA ){
+		FCGI_DataBody* dataBody = (FCGI_DataBody*)body;
+		free(dataBody->buffer);
+		free(dataBody);
+	}else if( header->type == FCGI_GET_VALUES ){
+		FCGI_GetValuesBody* paramBody = (FCGI_GetValuesBody*)body;
+		FCGI_GetValuesBody* nextParamBody;
+		for( ; paramBody != NULL ; paramBody = nextParamBody ){
+			nextParamBody = paramBody->next;
+			free(paramBody->param.nameData);
+			free(paramBody->param.valueData);
+			free(paramBody);
+		}
+	}else{
+		free(body);
+	}
+	free(header);
 	header = NULL;
 	body = NULL;
 	return 0;
 }
 void FastCgiSerialize::LogMsg( const std::string& strMsg ){
 	fprintf(stderr,"%s\n",strMsg.c_str());
+}
+int32_t FastCgiSerialize::Write( uint8_t* buffer , int size ){
+	int32_t iRet;
+	while( size != 0 ){
+		if( m_writeBufferSize == m_writeBufferPos ){
+			//write buffer is full
+			iRet = WriteFlush();
+			if( iRet != 0 )
+				return iRet;
+		}else{
+			//write buffer isnot full
+			int bufferReleaseCount = m_writeBufferSize - m_writeBufferPos;
+			int writeBufferCount = bufferReleaseCount < size ? bufferReleaseCount : size;
+			memcpy( m_writeBuffer + m_writeBufferPos , buffer , writeBufferCount );
+			size -= writeBufferCount;
+			buffer += writeBufferCount;
+			m_writeBufferPos += writeBufferCount;
+		}
+	}
+	return 0;
+}
+int32_t FastCgiSerialize::WriteFlush(){
+	uint8_t* writeBuffer = m_writeBuffer;
+	int32_t writeBufferCount = 0;
+	while( writeBuffer != m_writeBuffer + m_writeBufferPos ){
+		writeBufferCount = write( m_socket , writeBuffer , m_writeBuffer + m_writeBufferPos -  writeBuffer );
+		if( writeBufferCount <= 0 ){
+			LogMsg("write data error!");
+			return 1;
+		}
+		writeBuffer += writeBufferCount;
+	}
+	m_writeBufferPos = 0;
+	return 0;
 }
 int32_t FastCgiSerialize::Read( uint8_t* buffer , int size ){
 	//读取socket数据到buffer中
@@ -107,8 +198,6 @@ int32_t FastCgiSerialize::DeSerializeHeader( FCGI_Header*& header ){
 	iRet = Read( buffer , sizeof(buffer) );
 	if( iRet != 0 )
 		return iRet;
-	for( uint32_t i = 0 ; i != 8 ; ++i )
-		printf("%x\n",buffer[i]);
 		
 	header->version = buffer[0];
 	header->type = buffer[1];
@@ -126,9 +215,6 @@ int32_t FastCgiSerialize::DeSerializeHeader( FCGI_Header*& header ){
 	iRet = Read( header->padding , header->paddingLength );
 	if( iRet != 0 )
 		return iRet;
-	printf("XX %d\n",buffer[4] );
-	printf("XX %d\n",buffer[5] );
-	printf("XX %d\n",(buffer[4] << 8) + buffer[5]);
 	return 0;
 }
 int32_t FastCgiSerialize::DeSerializeBeginRequestBody( FCGI_Header* header , void*& resultBody ){
@@ -214,7 +300,6 @@ int32_t FastCgiSerialize::DeSerializeParamsBody( FCGI_Header* header , void*& re
 		if( iRet != 0 )
 			return iRet;
 		
-		printf("%s %s\n",body->param.nameData,body->param.valueData);
 	}
 	resultBody = body;
 	
@@ -231,8 +316,6 @@ int32_t FastCgiSerialize::DeSerializeStdinBody( FCGI_Header* header , void*& res
 	if( iRet != 0 )
 		return iRet;
 	resultBody = body;
-	
-	printf("XX %s\n",body->buffer );
 	return 0;
 	
 }
@@ -248,7 +331,87 @@ int32_t FastCgiSerialize::DeSerializeUnknownBody( FCGI_Header* header , void*& r
 	
 	body = (FCGI_UnknownTypeBody*)malloc(sizeof(FCGI_UnknownTypeBody));
 	iRet = ReadContent( header , (uint8_t*)body , sizeof(FCGI_UnknownTypeBody) );
-
+	if( iRet != 0 )
+		return iRet;
+		
 	resultBody = body;
+	return 0;
+}
+int32_t FastCgiSerialize::SerializeStdOut( FCGI_Header* header , void* body ){
+	int32_t iRet;
+	FCGI_StdOutBody* outBody = (FCGI_StdOutBody*)body;
+	
+	header->contentLength = outBody->bufferSize;
+	iRet = SerializeHeaderBegin( header );
+	if( iRet != 0 )
+		return iRet;
+	
+	iRet = Write( outBody->buffer , outBody->bufferSize );
+	if( iRet != 0 )
+		return iRet;
+	
+	iRet = SerializeHeaderEnd( header );
+	if( iRet != 0 )
+		return iRet;
+	
+	return 0;
+}
+int32_t FastCgiSerialize::SerializeStdErr( FCGI_Header* header , void* body ){
+	return SerializeStdOut(header,body);
+}
+int32_t FastCgiSerialize::SerializeData( FCGI_Header* header , void* body ){
+	return SerializeStdOut(header,body);
+}
+int32_t FastCgiSerialize::SerializeEndRequest( FCGI_Header* header , void* body ){
+	int32_t iRet;
+	FCGI_EndRequestBody* requestBody = (FCGI_EndRequestBody*)body;
+	
+	header->contentLength = 8;
+	iRet = SerializeHeaderBegin( header );
+	if( iRet != 0 )
+		return iRet;
+	
+	uint8_t buffer[8];
+	buffer[0] = ( requestBody->appStatus >> 24 )& 0xFF;
+	buffer[1] = ( requestBody->appStatus >> 16 )& 0xFF;
+	buffer[2] = ( requestBody->appStatus >> 8 )& 0xFF;
+	buffer[3] = ( requestBody->appStatus)& 0xFF;
+	buffer[4] = requestBody->protocolStatus;
+	buffer[5] = requestBody->reserved[0];
+	buffer[6] = requestBody->reserved[1];
+	buffer[7] = requestBody->reserved[2];
+	iRet = Write( buffer , sizeof(buffer) );
+	if( iRet != 0 )
+		return iRet;
+	
+	iRet = SerializeHeaderEnd( header );
+	if( iRet != 0 )
+		return iRet;
+	
+	return 0;
+}
+int32_t FastCgiSerialize::SerializeHeaderBegin( FCGI_Header* header ){
+	int32_t iRet;
+	uint8_t buffer[8];
+	header->paddingLength = (8- header->contentLength%8);
+	buffer[0] = header->version;
+	buffer[1] = header->type;
+	buffer[2] = ( header->requestId >> 8 )& 0xFF;
+	buffer[3] = ( header->requestId)& 0xFF;
+	buffer[4] = ( header->contentLength >> 8 )& 0xFF;;
+	buffer[5] = ( header->contentLength )& 0xFF;;
+	buffer[6] = header->paddingLength;
+	buffer[7] = header->reserved;
+	iRet = Write( buffer , sizeof(buffer) );
+	if( iRet != 0 )
+		return iRet;
+	return 0;
+}
+int32_t FastCgiSerialize::SerializeHeaderEnd( FCGI_Header* header ){
+	int32_t iRet;
+	uint8_t buffer[8] = {0};
+	iRet = Write( buffer , header->paddingLength );
+	if( iRet != 0 )
+		return iRet;
 	return 0;
 }

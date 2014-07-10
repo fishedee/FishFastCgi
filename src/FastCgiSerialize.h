@@ -47,12 +47,9 @@ typedef struct {
 } FCGI_BeginRequestBody;
 
 typedef struct {
-	unsigned char appStatusB3;
-	unsigned char appStatusB2;
-	unsigned char appStatusB1;
-	unsigned char appStatusB0;
-	unsigned char protocolStatus;
-	unsigned char reserved[3];
+	uint32_t appStatus;
+	uint8_t protocolStatus;
+	uint8_t reserved[3];
 } FCGI_EndRequestBody;
 
 typedef struct{
@@ -89,16 +86,27 @@ public:
 	~FastCgiSerialize();
 
 public:
-	int32_t DeSerializeRequestItem( FCGI_Header*& header , void*& body  );
+	int32_t WriteResponseItem( FCGI_Header* header , void* body );
+	int32_t FinishResponseItem();
+	int32_t ReadRequestItem( FCGI_Header*& header , void*& body  );
 	int32_t FreeRequestItem( FCGI_Header*& header , void*& body );
 	
 private:
+	int32_t Write( uint8_t* buffer , int size );
+	int32_t WriteFlush();
 	int32_t Read( uint8_t* buffer , int size );
 	int32_t ReadContent( FCGI_Header* header , uint8_t* buffer , int size );
 	int32_t ReadPadding( FCGI_Header* header , uint8_t* buffer , int size );
 	void LogMsg( const std::string& strMsg );
 	
 private:
+	int32_t SerializeStdOut( FCGI_Header* header , void* body );
+	int32_t SerializeStdErr( FCGI_Header* header , void* body );
+	int32_t SerializeData( FCGI_Header* header , void* body );
+	int32_t SerializeEndRequest( FCGI_Header* header , void* body );
+	int32_t SerializeHeaderBegin( FCGI_Header* header );
+	int32_t SerializeHeaderEnd( FCGI_Header* header );
+	
 	int32_t DeSerializeHeader( FCGI_Header*& header );
 	int32_t DeSerializeBeginRequestBody( FCGI_Header* header , void*& resultBody );
 	int32_t DeSerializeParamsBody( FCGI_Header* header , void*& resultBody );

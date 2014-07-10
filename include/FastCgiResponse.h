@@ -11,45 +11,85 @@ class FastCgiResponse{
 
 public:
 	FastCgiResponse(){
+		m_protocolStatus = 200;
+		m_appStatus = 0;
 	}
 	
 	~FastCgiResponse(){
 	}
 	
 public:
-	//Http回复头部
-	void SetHeader( const std::map<std::string,std::string>& mapHeader ){
-		m_mapHeader = mapHeader;
+	//Http请求id
+	void SetRequestId( uint16_t requestId ){
+		m_requestId = requestId;
 	}
 	
-	const std::map<std::string,std::string>& GetHeader(){
-		return m_mapHeader;
+	uint16_t GetRequestId()const{
+		return m_requestId;
 	}
 	
-	//Http回复码
-	void SetRetCode( uint32_t dwRetCode ){
-		m_dwRetCode = dwRetCode;
+	uint16_t& GetRequestId(){
+		return m_requestId;
 	}
 	
-	uint32_t GetRetCode(){
-		return m_dwRetCode;
+	//Http协议状态码
+	void SetProtocolStatus( uint8_t protocolStatus ){
+		m_protocolStatus = protocolStatus;
 	}
 	
-	
-	//Http回复Body
-	void SetBody( const std::string& strBody ){
-		m_strBody = strBody;
+	uint8_t GetProtocolStatus()const{
+		return m_protocolStatus;
 	}
 	
-	std::string GetBody(){
-		return m_strBody;
+	uint8_t& GetProtocolStatus(){
+		return m_protocolStatus;
+	}
+	
+	//Http状态吗
+	void SetAppStatus( uint32_t appStatus ){
+		m_appStatus = appStatus;
+	}
+	
+	uint32_t GetAppStatus()const{
+		return m_appStatus;
+	}
+	
+	uint32_t& GetAppStatus(){
+		return m_appStatus;
+	}
+	
+	//Http标准输出
+	void SetOut( const std::string& strOut ){
+		m_strOut = strOut;
+	}
+	
+	const std::string& GetOut()const{
+		return m_strOut;
+	}
+	
+	std::string& GetOut(){
+		return m_strOut;
+	}
+	
+	//Http标准错误
+	void SetErr( const std::string& strErr ){
+		m_strErr = strErr;
+	}
+	
+	const std::string& GetErr()const{
+		return m_strErr;
+	}
+	
+	std::string& GetErr(){
+		return m_strErr;
 	}
 	
 private:
-	std::map<std::string,std::string> m_mapHeader;
-	uint32_t m_dwRetCode;
-	std::string m_strBody;
-
+	std::string m_strErr;
+	std::string m_strOut;
+	uint32_t m_appStatus;
+	uint8_t m_protocolStatus;
+	uint16_t m_requestId;
 };
 
 }

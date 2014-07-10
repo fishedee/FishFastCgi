@@ -1,12 +1,27 @@
 #include "FastCgi.h"
 #include <iostream>
 #include <stdio.h>
+#include <string>
 using namespace std;
 using namespace fish;
 
+#define TO_STRING(a) to_string(a).c_str()
 void go( const FastCgiRequest& request , FastCgiResponse& response ){
-	response.SetBody("Hello World!");
-	printf("Hello World!\n");
+	printf("request in [flag:%s][requestId:%s][role:%s][in:%s]",
+		TO_STRING(request.GetFlag()),
+		TO_STRING(request.GetRequestId()),
+		TO_STRING(request.GetRole()),
+		request.GetIn().c_str());
+	for( map<string,string>::const_iterator it = request.GetParams().begin();
+		it != request.GetParams().end() ; ++it )
+		printf("[params:[key:%s][value:%s]]",
+			it->first.c_str(),
+			it->second.c_str());
+	printf("\n");
+	
+	response.SetOut("Fish World!");
+	response.SetProtocolStatus(200);
+	response.SetAppStatus(0);
 }
 
 int main(){

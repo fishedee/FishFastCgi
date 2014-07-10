@@ -17,28 +17,77 @@ public:
 	}
 	
 public:
-	//Http请求头部
-	void SetHeader( const std::map<std::string,std::string>& mapHeader ){
-		m_mapHeader = mapHeader;
+	//请求flag
+	void SetFlag( uint8_t flag ){
+		m_flag = flag;
 	}
 	
-	const std::map<std::string,std::string>& GetHeader(){
-		return m_mapHeader;
+	uint8_t GetFlag()const{
+		return m_flag;
 	}
 	
-	//Http请求参数
-	void SetParam( const std::map<std::string,std::string>& mapParam ){
-		m_mapParam = mapParam;
+	uint8_t& GetFlag(){
+		return m_flag;
 	}
 	
-	const std::map<std::string,std::string>& GetParam(){
-		return m_mapParam;
+	//请求requestId
+	void SetRequestId( uint16_t requestId ){
+		m_requestId = requestId;
+	}
+	
+	uint16_t GetRequestId()const{
+		return m_requestId;
+	}
+	
+	uint16_t& GetRequestId(){
+		return m_requestId;
+	}
+	
+	//请求role
+	void SetRole( uint16_t role ){
+		m_role = role;
+	}
+	
+	uint16_t GetRole()const{
+		return m_role;
+	}
+	
+	uint16_t& GetRole(){
+		return m_role;
+	}
+	
+	//请求参数
+	void SetParams( const std::map<std::string,std::string>& mapParams ){
+		m_mapParams = mapParams;
+	}
+	
+	const std::map<std::string,std::string>& GetParams()const{
+		return m_mapParams;
+	}
+	
+	std::map<std::string,std::string>& GetParams(){
+		return m_mapParams;
+	}
+	
+	//请求stdin
+	void SetIn( const std::string& strStdIn ){
+		m_strStdIn = strStdIn;
+	}
+	
+	const std::string& GetIn()const{
+		return m_strStdIn;
+	}
+	
+	std::string& GetIn(){
+		return m_strStdIn;
 	}
 	
 private:
-	std::map<std::string,std::string> m_mapHeader;
-	std::map<std::string,std::string> m_mapParam;
-
+	std::map<std::string,std::string> m_mapParams;
+	std::string m_strStdIn;
+	uint16_t m_role;
+	uint16_t m_requestId;
+	uint8_t m_flag;
 };
 
 }

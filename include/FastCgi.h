@@ -33,8 +33,8 @@ private:
 	void LogMsg( const std::string& strMsg );
 	void SetLastMsg( const std::string& m_strLastMsg );
 	int32_t BindSocket();
-	int32_t SerializeResponse( const FastCgiResponse& response , std::string& strResponse );
-	int32_t DeSerializeRequest( const std::string& strRequest  , FastCgiRequest& request );
+	int32_t DeSerializeRequest(  int clientSocket , FastCgiRequest& request );
+	int32_t SerializeResponse( int clientSocket , const FastCgiResponse& response );
 	
 private:
 	std::string m_strLastMsg;
