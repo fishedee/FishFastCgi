@@ -19,7 +19,10 @@ void go( const FastCgiRequest& request , FastCgiResponse& response ){
 			it->second.c_str());
 	printf("\n");
 	
-	response.SetOut("Fish World!");
+	response.SetOut(
+		"Content-type: text/html \r\n\r\n"
+		"<html><head></head><body>Hello World!</body><html>\n"
+	);
 	response.SetProtocolStatus(200);
 	response.SetAppStatus(0);
 }

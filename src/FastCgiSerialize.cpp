@@ -394,12 +394,15 @@ int32_t FastCgiSerialize::SerializeHeaderBegin( FCGI_Header* header ){
 	int32_t iRet;
 	uint8_t buffer[8];
 	header->paddingLength = (8- header->contentLength%8);
+	if( header->paddingLength  == 8)
+		header->paddingLength = 0;
+		
 	buffer[0] = header->version;
 	buffer[1] = header->type;
 	buffer[2] = ( header->requestId >> 8 )& 0xFF;
 	buffer[3] = ( header->requestId)& 0xFF;
-	buffer[4] = ( header->contentLength >> 8 )& 0xFF;;
-	buffer[5] = ( header->contentLength )& 0xFF;;
+	buffer[4] = ( header->contentLength >> 8 )& 0xFF;
+	buffer[5] = ( header->contentLength )& 0xFF;
 	buffer[6] = header->paddingLength;
 	buffer[7] = header->reserved;
 	iRet = Write( buffer , sizeof(buffer) );
