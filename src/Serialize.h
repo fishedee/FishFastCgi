@@ -30,14 +30,13 @@ namespace fish{
 typedef struct {
 	uint8_t version;
     uint8_t type;
-    uint16_t requestId;
-    uint16_t contentLength;
+    uint8_t requestIdB1;
+	uint8_t requestIdB0;
+    uint8_t contentLengthB1;
+	uint8_t contentLengthB0;
 	uint8_t paddingLength;
 	uint8_t reserved;
 	uint8_t* content;
-	uint8_t* padding;
-	uint16_t contentPos;
-	uint8_t paddingPos;
 } FCGI_Header;
 
 typedef struct {

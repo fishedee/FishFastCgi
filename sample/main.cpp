@@ -7,6 +7,7 @@ using namespace fish;
 
 #define TO_STRING(a) to_string(a).c_str()
 void go( const FastCgiRequest& request , FastCgiResponse& response ){
+	/*
 	printf("request in [flag:%s][requestId:%s][role:%s][in:%s]",
 		TO_STRING(request.GetFlag()),
 		TO_STRING(request.GetRequestId()),
@@ -18,6 +19,7 @@ void go( const FastCgiRequest& request , FastCgiResponse& response ){
 			it->first.c_str(),
 			it->second.c_str());
 	printf("\n");
+	*/
 	
 	response.SetOut(
 		"Content-type: text/html \r\n\r\n"
@@ -42,7 +44,7 @@ int main(){
 		return iRet;
 	}
 	
-	iRet = cgi.SetThreadPerProcess(1);
+	iRet = cgi.SetThreadPerProcess(10);
 	if( iRet != 0 ){
 		printf("%s\n",cgi.GetLastMsg().c_str());
 		return iRet;
