@@ -6,6 +6,7 @@
 #include <map>
 
 namespace fish{
+namespace fastcgi{
 
 class FastCgiResponse{
 
@@ -106,6 +107,7 @@ private:
 	uint16_t m_requestId;
 };
 
+}
 }
 
 #endif

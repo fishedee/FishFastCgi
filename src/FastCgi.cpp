@@ -59,7 +59,7 @@ int32_t FastCgi::Run(){
 	Network m_network;
 	m_network.ListenPort( m_dwPort );
 	m_network.SetClientThread( m_dwNetworkThread );
-	m_network.SetRequestHandler( m_callback );
+	m_network.SetListener( *this );
 		
 	//开启多进程
 	for( uint32_t i = 1 ; i < m_dwProcess ; ++i ){

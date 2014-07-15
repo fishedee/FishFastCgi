@@ -17,7 +17,7 @@ namespace network{
 
 class NetworkListener{
 public:
-	virtual void OnRequest( const FastCgiRequest&request , FastCgiResponse& response );
+	virtual void OnRequest( const FastCgiRequest&request , FastCgiResponse& response ) = 0;
 };
 
 class Network:FastCgiSocketListener{
@@ -39,7 +39,6 @@ private:
 public:
 	uint32_t m_dwThread;
 	NetworkListener* m_listener;
-	RequestHandler m_requestHandler;
 	std::vector<FastCgiSocket> m_vecClientSockets;
 	ServerSocket m_serverSocket;
 	

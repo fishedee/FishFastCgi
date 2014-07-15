@@ -14,7 +14,7 @@ namespace network{
 
 class FastCgiSocketListener{
 public:
-	virtual void OnRequest( const FastCgiRequest&request , FastCgiResponse& response );
+	virtual void OnRequest( const FastCgiRequest&request , FastCgiResponse& response ) = 0;
 };
 
 class FastCgiSocket:public ClientSocketListener{
@@ -28,11 +28,11 @@ public:
 
 public:
 	void OnConnected( int socket );
-	void OnRead( int socket , const std::string& request , std::string& response );
+	void OnRead( int socket , std::string& request , std::string& response );
 	void OnClose( int socket );
 	
 	void ReadHeader( int socket , const char* buffer , std::string& response );
-	void ReadStdInFinish( int socket , uint16_t requestId );
+	void ReadStdInFinish( int socket , uint16_t requestId , std::string& strResponse );
 	void ReadGetValues( int socket , FCGI_Header* header );
 	void CloseRequest( int socket , uint16_t requestId );
 	

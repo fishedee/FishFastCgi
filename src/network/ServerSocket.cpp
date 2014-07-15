@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <limits.h>
+#include <sys/types.h>
+#include <fcntl.h>
 
 using namespace fish::fastcgi::comm;
 
@@ -19,7 +21,7 @@ namespace fastcgi{
 namespace network{
 
 ServerSocket::ServerSocket(){
-	m_socket = -1;
+	m_serverSocket = -1;
 }
 ServerSocket::~ServerSocket(){
 }
@@ -43,7 +45,7 @@ int32_t ServerSocket::ListenPort( uint16_t dwPort ){
 		return 1;
 	}
 
-	flags == fcntl(m_serverSocket, F_GETFL, 0);
+	flags = fcntl(m_serverSocket, F_GETFL, 0);
 	fcntl(m_serverSocket, F_SETFL, flags | O_NONBLOCK);
 	
 	val = 1;

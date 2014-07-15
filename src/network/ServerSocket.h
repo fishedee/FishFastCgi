@@ -1,6 +1,8 @@
 #ifndef __FAST_CGI_SERVER_SOCKET_H__
 #define __FAST_CGI_SERVER_SOCKET_H__
 
+#include "stdint.h"
+
 namespace fish{
 namespace fastcgi{
 namespace network{

@@ -18,7 +18,7 @@ void Network::ListenPort( uint16_t dwPort ){
 void Network::SetClientThread( uint32_t dwThread ){
 	m_dwThread = dwThread;
 }
-void Network::SetListener( NetworkListener& requestHandler ){
+void Network::SetListener( NetworkListener& listener ){
 	m_listener = &listener;
 }
 int32_t Network::Run(){
@@ -31,7 +31,7 @@ int32_t Network::Run(){
 		ClientSocket clientSocket( m_serverSocket );
 		FastCgiSocket fastcgiSocket( clientSocket );
 		
-		fastcgiSocket.SetRequestListener(this);
+		fastcgiSocket.SetRequestListener(*this);
 		
 		m_vecClientSockets.push_back( fastcgiSocket );
 	}
@@ -59,7 +59,7 @@ void Network::OnRequest( const FastCgiRequest&request , FastCgiResponse& respons
 }
 void* Network::ThreadHelper( void* arg ){
 	FastCgiSocket* temp = (FastCgiSocket*)arg;
-	arg->Run();
+	temp->Run();
 	return NULL;
 }
 	

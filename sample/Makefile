@@ -1,6 +1,6 @@
-SRC := main.cpp ../src/FastCgi.cpp ../src/FastCgiSerialize.cpp
-INC := -I../include -I../src
-LIB := -lpthread
+SRC := main.cpp
+INC := -I../src
+LIB := -L../src -lfishfcgi -lpthread
 OUT := fastcgi
 OBJ := $(notdir $(patsubst %.cpp,%.o,$(SRC)))
 CXXFLAGS := -ggdb -std=c++0x -Wall -O3

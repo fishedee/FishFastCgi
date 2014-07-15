@@ -1,8 +1,5 @@
-main.o: main.cpp ../include/FastCgi.h ../include/FastCgiRequest.h \
- ../include/FastCgiResponse.h
-FastCgi.o: ../src/FastCgi.cpp ../include/FastCgi.h \
- ../include/FastCgiRequest.h ../include/FastCgiResponse.h \
- ../src/FastCgiSerialize.h ../include/FastCgiRequest.h \
- ../include/FastCgiResponse.h
-FastCgiSerialize.o: ../src/FastCgiSerialize.cpp ../src/FastCgiSerialize.h \
- ../include/FastCgiRequest.h ../include/FastCgiResponse.h
+main.o: main.cpp ../src/FastCgi.h ../src/FastCgiRequest.h \
+ ../src/FastCgiResponse.h ../src/network/Network.h \
+ ../src/network/ServerSocket.h ../src/network/ClientSocket.h \
+ ../src/network/FastCgiSocket.h ../src/FastCgiRequest.h \
+ ../src/FastCgiResponse.h ../src/network/FastCgiProtocol.h

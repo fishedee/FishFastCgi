@@ -1,4 +1,8 @@
 #include "FastCgiProtocol.h"
+#include "comm/Logger.h"
+#include <limits.h>
+
+using namespace fish::fastcgi::comm;
 
 namespace fish{
 namespace fastcgi{
@@ -15,13 +19,13 @@ int32_t FastCgiProtocol::DeSerializeRequest( const std::list<FCGI_Header*>& head
 	
 	for( std::list<FCGI_Header*>::const_iterator it = headerList.begin();
 		it != headerList.end() ; ++it ){
-		if( it->type == FCGI_BEGIN_REQUEST ){
+		if( (*it)->type == FCGI_BEGIN_REQUEST ){
 			iRet = DeSerializeBeginRequest( *it , request );
-		}else if( it->type == FCGI_STDIN ){
+		}else if( (*it)->type == FCGI_STDIN ){
 			iRet = DeSerializeStdIn( *it , request );
-		}else if( it->type == FCGI_DATA ){
+		}else if( (*it)->type == FCGI_DATA ){
 			iRet = DeSerializeData( *it , request );
-		}else if( it->type == FCGI_PARAMS ){
+		}else if( (*it)->type == FCGI_PARAMS ){
 			iRet = DeSerializeParams( *it , request );
 		}else{
 			Logger::Err("UnKnown header type");
@@ -64,7 +68,7 @@ int32_t FastCgiProtocol::DeSerializeGetValues( const FCGI_Header* header , FastC
 		return 1;
 	}
 		
-	iRet = DeSerializeParams( headerList , request );
+	iRet = DeSerializeParams( header , request );
 	if( iRet != 0 )
 		return iRet;
 		
@@ -73,6 +77,8 @@ int32_t FastCgiProtocol::DeSerializeGetValues( const FCGI_Header* header , FastC
 
 int32_t FastCgiProtocol::SerializeGetValuesResult( uint16_t requestId , const std::map<std::string,std::string>& response , std::string& strResponse ){
 	std::string strBuffer;
+	int32_t iRet;
+	
 	for( std::map<std::string,std::string>::const_iterator it = response.begin() ; 
 		it != response.end() ; ++it ){
 		strBuffer += (char)it->first.size();
@@ -101,7 +107,6 @@ int32_t FastCgiProtocol::SerializeGetValuesResult( uint16_t requestId , const st
 }
 
 int32_t FastCgiProtocol::DeSerializeParams( const FCGI_Header* header, FastCgiRequest& request ){
-	int32_t iRet;
 	uint8_t nameLengthB3;  /* nameLengthB3  >> 7 == 1 */
 	uint8_t nameLengthB2;
 	uint8_t nameLengthB1;
@@ -166,7 +171,7 @@ int32_t FastCgiProtocol::DeSerializeBeginRequest( const FCGI_Header* header, Fas
 	
 	request.SetRole( role );
 	request.SetFlag( flags );
-	request.SetRquestId( header->requestId );
+	request.SetRequestId( header->requestId );
 	return 0;
 }
 
@@ -286,7 +291,7 @@ int32_t FastCgiProtocol::SerializeData( const FastCgiResponse& response , std::s
 	return 0;
 }
 
-int32_t SerializeHeader( FCGI_Header& header , std::string& strResponse ){
+int32_t FastCgiProtocol::SerializeHeader( FCGI_Header& header , std::string& strResponse ){
 	char buffer[8];
 	
 	header.paddingLength = ( 8 - header.contentLength%8 );
@@ -306,7 +311,7 @@ int32_t SerializeHeader( FCGI_Header& header , std::string& strResponse ){
 	return 0;
 }
 
-int32_t SerializePadding( FCGI_Header& header , std::string& strResponse ){
+int32_t FastCgiProtocol::SerializePadding( FCGI_Header& header , std::string& strResponse ){
 	char buffer[8] = {0};
 	
 	strResponse.append( buffer , buffer + header.paddingLength );

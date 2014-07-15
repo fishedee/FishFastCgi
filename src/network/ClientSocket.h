@@ -11,6 +11,7 @@
 #include <fcntl.h>
 
 #include <map>
+#include <string>
 #include "ServerSocket.h"
 
 namespace fish{
@@ -32,7 +33,7 @@ public:
 class ClientSocketListener{
 public:
 	virtual void OnConnected( int socket ) = 0;
-	virtual void OnRead( int socket , const std::string& request , std::string& response ) = 0;
+	virtual void OnRead( int socket , std::string& request , std::string& response ) = 0;
 	virtual void OnClose( int socket ) = 0;
 };
 
@@ -48,9 +49,9 @@ public:
 
 private:
 	void handleAcceptEvent( int socket );
-	void handleReadEvent( int socket );
-	void handleWriteEvent( int socket );
-	void handleCloseEvent( int socket );
+	void handleReadEvent( ClientSocketData* data  );
+	void handleWriteEvent( ClientSocketData* data  );
+	void handleCloseEvent( ClientSocketData* data );
 	
 private:
 	int m_epollQueue;

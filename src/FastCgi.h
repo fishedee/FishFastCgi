@@ -3,7 +3,7 @@
 
 #include "FastCgiRequest.h"
 #include "FastCgiResponse.h"
-#include "Network.h"
+#include "network/Network.h"
 #include <stdint.h>
 #include <tr1/functional>
 #include <string>

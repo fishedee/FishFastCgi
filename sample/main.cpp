@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string>
 using namespace std;
-using namespace fish;
+using namespace fish::fastcgi;
 
 #define TO_STRING(a) to_string(a).c_str()
 void go( const FastCgiRequest& request , FastCgiResponse& response ){
@@ -40,7 +40,7 @@ int main(){
 
 	iRet = cgi.Run();
 	if( iRet != 0 ){
-		printf("%s\n",cgi.GetLastMsg().c_str());
+		printf("cgi Run error\n");
 		return iRet;
 	}
 	

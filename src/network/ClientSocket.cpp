@@ -1,5 +1,7 @@
 #include "ClientSocket.h"
 #include "comm/Logger.h"
+#include <netinet/in.h>
+#include <netinet/tcp.h>
 
 using namespace fish::fastcgi::comm;
 
@@ -19,6 +21,7 @@ void ClientSocket::SetListener( ClientSocketListener& listener ){
 int32_t ClientSocket::Run(){
 	struct epoll_event epollEvent;
 	int nepollEvent;
+	int iRet,i;
 	
 	//add epoll queue
 	m_epollQueue = epoll_create(1024);
@@ -29,12 +32,12 @@ int32_t ClientSocket::Run(){
 	
 	//create server socket data
 	ClientSocketData* data = new ClientSocketData();
-	data->socket = serverSocket.GetSocket();
+	data->socket = m_serverSocket.GetSocket();
 	
 	//add server socket to epoll
 	epollEvent.data.ptr  = data;
 	epollEvent.events = EPOLLIN ;
-	iRet = epoll_ctl(m_epollQueue, EPOLL_CTL_ADD,serverSocket.GetSocket(),&epollEvent);
+	iRet = epoll_ctl(m_epollQueue, EPOLL_CTL_ADD,m_serverSocket.GetSocket(),&epollEvent);
 	if( iRet < 0 ){
 		Logger::Err("epoll_ctl EPOLL_CTL_ADD server socket error");
 		return 1;
@@ -53,7 +56,7 @@ int32_t ClientSocket::Run(){
 			data = (ClientSocketData*)m_activeEvents[i].data.ptr;
 			
 			if( ( m_activeEvents[i].events & EPOLLIN  ) && 
-				data->socket == serverSocket.GetSocket() ){
+				data->socket == m_serverSocket.GetSocket() ){
 				handleAcceptEvent( data->socket );
 			}else if( m_activeEvents[i].events & EPOLLIN ){
 				handleReadEvent( data );
@@ -69,10 +72,10 @@ int32_t ClientSocket::Run(){
 }
 void ClientSocket::handleAcceptEvent( int server  ){
 	struct sockaddr_in connection_addr;
-	int sin_size;
+	socklen_t sin_size;
 	int clientSocket;
 	int flags;
-	int val;
+	int val,iRet;
 	struct epoll_event epollEvent;
 	
 	//accept connection
@@ -84,14 +87,14 @@ void ClientSocket::handleAcceptEvent( int server  ){
 	}
 	
 	//set non-block
-	flags == fcntl(clientSocket, F_GETFL, 0);
+	flags = fcntl(clientSocket, F_GETFL, 0);
 	fcntl(clientSocket, F_SETFL, flags | O_NONBLOCK);
 	
 	//set nodelay
 	val = 1;
 	if( setsockopt(clientSocket, IPPROTO_TCP, TCP_NODELAY,&val,sizeof(val)) < 0 ){
 		Logger::Err("Set Socket TCP_NODELAY Error!");
-		return 1;
+		return;
 	}
 	
 	//create socket data
