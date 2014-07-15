@@ -1,5 +1,7 @@
 #include "ClientSocket.h"
-#include "Logger.h"
+#include "comm/Logger.h"
+
+using namespace fish::fastcgi::comm;
 
 namespace fish{
 namespace fastcgi{
@@ -25,8 +27,12 @@ int32_t ClientSocket::Run(){
 		return 1;
 	}
 	
+	//create server socket data
+	ClientSocketData* data = new ClientSocketData();
+	data->socket = serverSocket.GetSocket();
+	
 	//add server socket to epoll
-	epollEvent.data.fd  = serverSocket.GetSocket();
+	epollEvent.data.ptr  = data;
 	epollEvent.events = EPOLLIN ;
 	iRet = epoll_ctl(m_epollQueue, EPOLL_CTL_ADD,serverSocket.GetSocket(),&epollEvent);
 	if( iRet < 0 ){
@@ -44,13 +50,15 @@ int32_t ClientSocket::Run(){
 		}
 		
 		for( i = 0 ; i != nepollEvent ; ++i ){
+			data = (ClientSocketData*)m_activeEvents[i].data.ptr;
+			
 			if( ( m_activeEvents[i].events & EPOLLIN  ) && 
-				m_activeEvents[i].data.fd == serverSocket.GetSocket() ){
-				handleAcceptEvent( m_activeEvents[i].data.fd );
+				data->socket == serverSocket.GetSocket() ){
+				handleAcceptEvent( data->socket );
 			}else if( m_activeEvents[i].events & EPOLLIN ){
-				handleReadEvent( m_activeEvents[i].data.fd );
+				handleReadEvent( data );
 			}else if( m_activeEvents[i].events & EPOLLOUT ){
-				handleWriteEvent( m_activeEvents[i].data.fd );
+				handleWriteEvent( data );
 			}
 		}
 	}
@@ -59,11 +67,12 @@ int32_t ClientSocket::Run(){
 	close(m_epollQueue);
 	return 0;
 }
-void ClientSocket::handleAcceptEvent( int server ){
+void ClientSocket::handleAcceptEvent( int server  ){
 	struct sockaddr_in connection_addr;
 	int sin_size;
 	int clientSocket;
 	int flags;
+	int val;
 	struct epoll_event epollEvent;
 	
 	//accept connection
@@ -77,6 +86,13 @@ void ClientSocket::handleAcceptEvent( int server ){
 	//set non-block
 	flags == fcntl(clientSocket, F_GETFL, 0);
 	fcntl(clientSocket, F_SETFL, flags | O_NONBLOCK);
+	
+	//set nodelay
+	val = 1;
+	if( setsockopt(clientSocket, IPPROTO_TCP, TCP_NODELAY,&val,sizeof(val)) < 0 ){
+		Logger::Err("Set Socket TCP_NODELAY Error!");
+		return 1;
+	}
 	
 	//create socket data
 	ClientSocketData* data = new ClientSocketData();

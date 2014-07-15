@@ -6,6 +6,7 @@
 #include <map>
 
 namespace fish{
+namespace fastcgi{
 
 class FastCgiRequest{
 
@@ -82,14 +83,29 @@ public:
 		return m_strStdIn;
 	}
 	
+	//请求data
+	void SetData( const std::string& strData ){
+		m_strData = strData;
+	}
+	
+	const std::string& GetData()const{
+		return m_strData;
+	}
+	
+	std::string& GetData(){
+		return m_strData;
+	}
+	
 private:
 	std::map<std::string,std::string> m_mapParams;
 	std::string m_strStdIn;
+	std::string m_strData;
 	uint16_t m_role;
 	uint16_t m_requestId;
 	uint8_t m_flag;
 };
 
+}
 }
 
 #endif

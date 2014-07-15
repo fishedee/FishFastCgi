@@ -1,7 +1,11 @@
 #include "FastCgi.h"
-#include "FastCgiSerialize.h"
 #include "network/Network.h"
-#include "comm/logger.h"
+#include "comm/Logger.h"
+
+#include <unistd.h>
+#include<sys/types.h>
+#include<sys/wait.h>
+#include <signal.h>
 
 using namespace fish::fastcgi::comm;
 using namespace fish::fastcgi::network;
@@ -15,12 +19,6 @@ static void childProcessExitHandler(int num)
     int status;   
 	waitpid(-1,&status,WNOHANG);   
     WIFEXITED(status);
-}  
-
-static void* childThreadHandler(void* fastcgi ){
-	FastCgi* temp = (FastCgi*)fastcgi;
-	temp->HandleRequest();
-	return NULL;
 }
 
 FastCgi::FastCgi(){
@@ -31,26 +29,27 @@ FastCgi::~FastCgi(){
 
 void FastCgi::SetNetworkPort( uint16_t dwPort ){
 	m_dwPort = dwPort;
-	return 0;
+	return;
 }
 
 void FastCgi::SetNetworkThread( uint32_t dwNetworkThread ){
 	m_dwNetworkThread = dwNetworkThread;
-	return 0;
+	return;
 }
 
 void FastCgi::SetProcess( uint32_t dwProcess ){
 	m_dwProcess = dwProcess;
-	return 0;
+	return;
 }
 
 void FastCgi::SetCallBack( const CallBackFun& callback ){
 	m_callback = callback;
-	return 0;
+	return;
 }
 
 int32_t FastCgi::Run(){
 	int32_t iRet;
+	int pid;
 	
 	//绑定信号列表
 	signal(SIGPIPE, SIG_IGN);
@@ -83,7 +82,9 @@ int32_t FastCgi::Run(){
 	pthread_exit(NULL);
 	return 0;
 }
-
+void FastCgi::OnRequest( const FastCgiRequest&request , FastCgiResponse& response ){
+	m_callback( request , response );
+}
 
 }
 }

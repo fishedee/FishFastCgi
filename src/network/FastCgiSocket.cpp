@@ -1,4 +1,7 @@
 #include "FastCgiSocket.h"
+#include "comm/Logger.h"
+
+using namespace fish::fastcgi::comm;
 
 namespace fish{
 namespace fastcgi{
@@ -35,7 +38,7 @@ void FastCgiSocket::OnRead( int socket , std::string& request , std::string& res
 		if( request.size() < 8 + contentLength + paddingLength )
 			return ;
 			
-		OnReadHeader(socket,headerBuffer , response);
+		ReadHeader(socket,headerBuffer , response);
 		
 		nReadSize += 8 + contentLength + paddingLength;
 		headerBuffer += 8 + contentLength + paddingLength;
@@ -49,11 +52,11 @@ void FastCgiSocket::OnRead( int socket , std::string& request , std::string& res
 void FastCgiSocket::OnClose( int socket ){
 	for( std::map<uint16_t,std::list<FCGI_Header*> >::iterator it = m_mapHeaderList[socket].begin();
 		it != m_mapHeaderList[socket].end() ; ++it ){
-		OnCloseRequest( socket , it->first );
+		CloseRequest( socket , it->first );
 	}
 	m_mapHeaderList.remove( socket );
 }
-void FastCgiSocket::OnReadHeader( int socket , const char* buffer , std::string& response ){
+void FastCgiSocket::ReadHeader( int socket , const char* buffer , std::string& response ){
 	FCGI_Header* header = new FCGI_Header();
 	
 	//read header
@@ -69,18 +72,18 @@ void FastCgiSocket::OnReadHeader( int socket , const char* buffer , std::string&
 	memcpy( header->content , buffer + 8 , header->contentLength );
 	
 	if( header->type == FCGI_GET_VALUES ){
-		OnReadGetValues( socket , header );
+		ReadGetValues( socket , header );
 		delete[] header->content;
 		delete header;
 	}else{
-		m_mapHeaderList[socket][requestId] = header;
+		m_mapHeaderList[socket][requestId].push_back( header );
 		//on read stdin finish
 		if( header->type == FCGI_STDIN && header->contentLength == 0 ){
-			OnReadStdInFinish( socket , header->requestId , response );
+			ReadStdInFinish( socket , header->requestId , response );
 		}
 	}
 }
-void FastCgiSocket::OnReadStdInFinish( int socket , uint16_t requestId , std::string& strResponse ){
+void FastCgiSocket::ReadStdInFinish( int socket , uint16_t requestId , std::string& strResponse ){
 	FastCgiRequest request;
 	FastCgiResponse response;
 	int32_t iRet;
@@ -88,16 +91,19 @@ void FastCgiSocket::OnReadStdInFinish( int socket , uint16_t requestId , std::st
 	iRet = m_protocol.DeSerializeRequest( m_mapHeaderList[socket][requestId] , request );
 	if( iRet != 0 )
 		return;
-		
+	
+	response.SetRequestId( request.GetRequestId() );
 	m_listener->OnRequest( request , response );
 	
 	iRet = m_protocol.SerializeResponse( response , strResponse );
 	if( iRet != 0 )
 		return;
 		
+	CloseRequest(socket,requestId);
+	
 	return;
 }
-void FastCgiSocket::OnReadGetValues( int socket , FCGI_Header* header ){
+void FastCgiSocket:ReadGetValues( int socket , FCGI_Header* header ){
 	FastCgiRequest request;
 	
 	iRet = m_protocol.DeSerializeGetValues( header , request );
@@ -106,7 +112,7 @@ void FastCgiSocket::OnReadGetValues( int socket , FCGI_Header* header ){
 		
 	return;
 }
-void FastCgiSocket::OnCloseRequest( int socket , uint16_t requestId ){
+void FastCgiSocket::CloseRequest( int socket , uint16_t requestId ){
 	for( std::list<FCGI_Header*>::iterator it = m_mapHeaderList[socket][requestId].begin();
 		it != m_mapHeaderList[socket][requestId].end() ;++it ){
 		delete[] (*it)->content;

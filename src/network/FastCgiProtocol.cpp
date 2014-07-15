@@ -64,7 +64,7 @@ int32_t FastCgiProtocol::DeSerializeGetValues( const FCGI_Header* header , FastC
 		return 1;
 	}
 		
-	iRet = DeSerializeGetValues( header , request );
+	iRet = DeSerializeParams( headerList , request );
 	if( iRet != 0 )
 		return iRet;
 		
@@ -86,7 +86,6 @@ int32_t FastCgiProtocol::SerializeGetValuesResult( uint16_t requestId , const st
 	header.type = FCGI_GET_VALUES_RESULT;
 	header.requestId = requestId;
 	header.contentLength = strBuffer.size();
-	header.paddingLength = ( 8 - header.contentLength%8 );
 	header.reserved = 0;
 	iRet = SerializeHeader( header , strResponse );
 	if( iRet != 0 )
@@ -126,6 +125,7 @@ int32_t FastCgiProtocol::DeSerializeParams( const FCGI_Header* header, FastCgiRe
 			nameLengthB0 = nameLengthB3;
 			nameLengthB3 = nameLengthB2 = nameLengthB1 = 0;
 		}
+		
 		//读取value的长度
 		valueLengthB3 = header->content[contentPos++];
 		if( valueLengthB3 >> 7 == 1 ){
@@ -136,6 +136,7 @@ int32_t FastCgiProtocol::DeSerializeParams( const FCGI_Header* header, FastCgiRe
 			valueLengthB0 = valueLengthB3;
 			valueLengthB3 = valueLengthB2 = valueLengthB1 = 0;
 		}
+		
 		//读取key,value数据
 		nameLength = ((nameLengthB3 & 0x7f) << 24) + (nameLengthB2 << 16) + (nameLengthB1 << 8) + nameLengthB0;
 		valueLength = ((valueLengthB3 & 0x7f) << 24) + (valueLengthB2 << 16) + (valueLengthB1 << 8) + valueLengthB0;
@@ -147,10 +148,6 @@ int32_t FastCgiProtocol::DeSerializeParams( const FCGI_Header* header, FastCgiRe
 		contentPos += nameLength + valueLength;
 	}
 	return 0;
-}
-
-int32_t FastCgiProtocol::DeSerializeGetValues( const FCGI_Header* headerList, FastCgiRequest& request ){
-	return DeSerializeParams( headerList , request );
 }
 
 int32_t FastCgiProtocol::DeSerializeStdIn( const FCGI_Header* headerList, FastCgiRequest& request ){
@@ -181,7 +178,6 @@ int32_t FastCgiProtocol::SerializeEndRequest( const FastCgiResponse& response , 
 	header.type = FCGI_END_REQUEST;
 	header.requestId = response.GetRequestId();
 	header.contentLength = 8;
-	header.paddingLength = ( 8 - header.contentLength%8 );
 	header.reserved = 0;
 	iRet = SerializeHeader( header , strResponse );
 	if( iRet != 0 )
@@ -215,7 +211,6 @@ int32_t FastCgiProtocol::SerializeStdOut( const FastCgiResponse& response , std:
 		header.type = FCGI_STDOUT;
 		header.requestId = response.GetRequestId();
 		header.contentLength = writeSize;
-		header.paddingLength = ( 8 - header.contentLength%8 );
 		header.reserved = 0;
 		iRet = SerializeHeader( header , strResponse );
 		if( iRet != 0 )
@@ -245,7 +240,6 @@ int32_t FastCgiProtocol::SerializeStdErr( const FastCgiResponse& response , std:
 		header.type = FCGI_STDERR;
 		header.requestId = response.GetRequestId();
 		header.contentLength = writeSize;
-		header.paddingLength = ( 8 - header.contentLength%8 );
 		header.reserved = 0;
 		iRet = SerializeHeader( header , strResponse );
 		if( iRet != 0 )
@@ -275,7 +269,6 @@ int32_t FastCgiProtocol::SerializeData( const FastCgiResponse& response , std::s
 		header.type = FCGI_DATA;
 		header.requestId = response.GetRequestId();
 		header.contentLength = writeSize;
-		header.paddingLength = ( 8 - header.contentLength%8 );
 		header.reserved = 0;
 		iRet = SerializeHeader( header , strResponse );
 		if( iRet != 0 )
@@ -296,6 +289,10 @@ int32_t FastCgiProtocol::SerializeData( const FastCgiResponse& response , std::s
 int32_t SerializeHeader( FCGI_Header& header , std::string& strResponse ){
 	char buffer[8];
 	
+	header.paddingLength = ( 8 - header.contentLength%8 );
+	if( header.paddingLength == 8 )
+		header.paddingLength = 0;
+		
 	buffer[0] = header.version;
 	buffer[1] = header.type;
 	buffer[2] = (header.requestId >> 8 ) & 0xFF;
@@ -311,10 +308,6 @@ int32_t SerializeHeader( FCGI_Header& header , std::string& strResponse ){
 
 int32_t SerializePadding( FCGI_Header& header , std::string& strResponse ){
 	char buffer[8] = {0};
-	
-	header.paddingLength = ( 8 - header.contentLength%8 );
-	if( header.paddingLength == 8 )
-		header.paddingLength = 0;
 	
 	strResponse.append( buffer , buffer + header.paddingLength );
 	return 0;

@@ -1,4 +1,5 @@
 #include "ServerSocket.h"
+#include "comm/Logger.h"
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <netinet/in.h>
@@ -10,6 +11,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <limits.h>
+
+using namespace fish::fastcgi::comm;
 
 namespace fish{
 namespace fastcgi{
@@ -42,6 +45,12 @@ int32_t ServerSocket::ListenPort( uint16_t dwPort ){
 
 	flags == fcntl(m_serverSocket, F_GETFL, 0);
 	fcntl(m_serverSocket, F_SETFL, flags | O_NONBLOCK);
+	
+	val = 1;
+	if( setsockopt(m_serverSocket, IPPROTO_TCP, TCP_NODELAY,&val,sizeof(val)) < 0 ){
+		Logger::Err("Set Socket TCP_NODELAY Error!");
+		return 1;
+	}
 	
 	val = 1;
 	if (setsockopt(m_serverSocket, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) < 0) {

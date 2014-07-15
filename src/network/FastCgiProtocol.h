@@ -2,6 +2,8 @@
 #define __FAST_CGI_PROTOCOL_H__
 
 #include <list>
+#include <string>
+#include <stdint.h>
 
 namespace fish{
 namespace fastcgi{
@@ -91,7 +93,6 @@ public:
 	
 private:
 	int32_t DeSerializeParams( const FCGI_Header* headerList, FastCgiRequest& request );
-	int32_t DeSerializeGetValues( const FCGI_Header* headerList, FastCgiRequest& request );
 	int32_t DeSerializeStdIn( const FCGI_Header* headerList, FastCgiRequest& request );
 	int32_t DeSerializeData( const FCGI_Header* headerList, FastCgiRequest& request );
 	int32_t DeSerializeBeginRequest( const FCGI_Header* headerList, FastCgiRequest& request );
@@ -101,8 +102,8 @@ private:
 	int32_t SerializeStdErr( const FastCgiResponse& response , std::string& strResponse );
 	int32_t SerializeData( const FastCgiResponse& response , std::string& strResponse );
 	
-	int32_t SerializeHeader( const FastCgiResponse& response , std::string& strResponse );
-	int32_t SerializePadding( const FastCgiResponse& response , std::string& strResponse );
+	int32_t SerializeHeader( FCGI_Header& header , std::string& strResponse );
+	int32_t SerializePadding( FCGI_Header& header , std::string& strResponse );
 
 };
 

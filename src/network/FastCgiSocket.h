@@ -3,6 +3,8 @@
 
 #include <map>
 #include <list>
+#include "FastCgiRequest.h"
+#include "FastCgiResponse.h"
 #include "ClientSocket.h"
 #include "FastCgiProtocol.h"
 
@@ -29,10 +31,10 @@ public:
 	void OnRead( int socket , const std::string& request , std::string& response );
 	void OnClose( int socket );
 	
-	void OnReadHeader( int socket , const char* buffer , std::string& response );
-	void OnReadStdInFinish( int socket , uint16_t requestId );
-	void OnReadGetValues( int socket , FCGI_Header* header );
-	void OnCloseRequest( int socket , uint16_t requestId );
+	void ReadHeader( int socket , const char* buffer , std::string& response );
+	void ReadStdInFinish( int socket , uint16_t requestId );
+	void ReadGetValues( int socket , FCGI_Header* header );
+	void CloseRequest( int socket , uint16_t requestId );
 	
 private:
 	std::map<int,std::map<uint16_t,std::list<FCGI_Header*> > > m_mapHeaderList;

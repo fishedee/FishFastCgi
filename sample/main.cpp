@@ -32,30 +32,12 @@ void go( const FastCgiRequest& request , FastCgiResponse& response ){
 int main(){
 	FastCgi cgi;
 	int32_t iRet;
-	iRet = cgi.SetNetwork("127.0.0.1",4123);
-	if( iRet != 0 ){
-		printf("%s\n",cgi.GetLastMsg().c_str());
-		return iRet;
-	}
 	
-	iRet = cgi.SetProcess(1);
-	if( iRet != 0 ){
-		printf("%s\n",cgi.GetLastMsg().c_str());
-		return iRet;
-	}
-	
-	iRet = cgi.SetThreadPerProcess(10);
-	if( iRet != 0 ){
-		printf("%s\n",cgi.GetLastMsg().c_str());
-		return iRet;
-	}
-	
-	iRet = cgi.SetCallBack(go);
-	if( iRet != 0 ){
-		printf("%s\n",cgi.GetLastMsg().c_str());
-		return iRet;
-	}
-	
+	cgi.SetNetworkPort(4123);
+	cgi.SetNetworkThread(10);
+	cgi.SetProcess(1);
+	cgi.SetCallBack(go);
+
 	iRet = cgi.Run();
 	if( iRet != 0 ){
 		printf("%s\n",cgi.GetLastMsg().c_str());

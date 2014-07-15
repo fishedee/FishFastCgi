@@ -58,6 +58,19 @@ public:
 		return m_appStatus;
 	}
 	
+	//Http标准Data
+	void SetData( const std::string& strData ){
+		m_strData = strData;
+	}
+	
+	const std::string& GetData()const{
+		return m_strData;
+	}
+	
+	std::string& GetData(){
+		return m_strData;
+	}
+	
 	//Http标准输出
 	void SetOut( const std::string& strOut ){
 		m_strOut = strOut;
@@ -87,6 +100,7 @@ public:
 private:
 	std::string m_strErr;
 	std::string m_strOut;
+	std::string m_strData;
 	uint32_t m_appStatus;
 	uint8_t m_protocolStatus;
 	uint16_t m_requestId;
