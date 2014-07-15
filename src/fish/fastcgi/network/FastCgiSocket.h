@@ -4,20 +4,11 @@
 #include <map>
 #include <list>
 #include "ClientSocket.h"
+#include "FastCgiProtocol.h"
 
 namespace fish{
 namespace fastcgi{
 namespace network{
-
-typedef struct {
-	uint8_t version;
-    uint8_t type;
-    uint16_t requestId;
-    uint16_t contentLength;
-	uint8_t paddingLength;
-	uint8_t reserved;
-	uint8_t* content;
-} FCGI_Header;
 
 class FastCgiSocketListener{
 public:
@@ -46,6 +37,7 @@ public:
 private:
 	std::map<int,std::map<uint16_t,std::list<FCGI_Header*> > > m_mapHeaderList;
 	FastCgiSocketListener* m_listener;
+	FastCgiProtocol m_protocol;
 	ClientSocket m_clientSocket;
 };
 
