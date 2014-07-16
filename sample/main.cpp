@@ -36,7 +36,7 @@ int main(){
 	FastCgi cgi;
 	int32_t iRet;
 	
-	cgi.SetNetworkPort(4123);
+	cgi.SetNetworkUnixAddress("/dev/shm/fishfcgi.sock");
 	cgi.SetNetworkThread(10);
 	cgi.SetProcess(1);
 	cgi.SetCallBack(go);

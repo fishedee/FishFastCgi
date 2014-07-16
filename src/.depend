@@ -15,3 +15,4 @@ Network.o: network/Network.cpp network/Network.h network/ServerSocket.h \
 ServerSocket.o: network/ServerSocket.cpp network/ServerSocket.h \
  ../src/comm/Logger.h
 Logger.o: comm/Logger.cpp comm/Logger.h
+Malloc.o: comm/Malloc.cpp

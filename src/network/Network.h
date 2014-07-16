@@ -26,6 +26,7 @@ public:
 	Network();
 	~Network();
 	void ListenPort( uint16_t dwPort );
+	void ListenUnixAddress( const std::string& strAddress );
 	void SetClientThread( uint32_t dwThread );
 	void SetListener( NetworkListener& listener );
 	int32_t Run();

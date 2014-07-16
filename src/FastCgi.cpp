@@ -22,6 +22,7 @@ static void childProcessExitHandler(int num)
 }
 
 FastCgi::FastCgi(){
+	isUnixSocket = true;
 }
 
 FastCgi::~FastCgi(){
@@ -29,6 +30,13 @@ FastCgi::~FastCgi(){
 
 void FastCgi::SetNetworkPort( uint16_t dwPort ){
 	m_dwPort = dwPort;
+	isUnixSocket = false;
+	return;
+}
+
+void FastCgi::SetNetworkUnixAddress( const std::string& strAddress ){
+	m_strAddress = strAddress;
+	isUnixSocket = true;
 	return;
 }
 
@@ -57,7 +65,10 @@ int32_t FastCgi::Run(){
 	
 	//初始化网络
 	Network m_network;
-	m_network.ListenPort( m_dwPort );
+	if( isUnixSocket )
+		m_network.ListenUnixAddress( m_strAddress );
+	else
+		m_network.ListenPort( m_dwPort );
 	m_network.SetClientThread( m_dwNetworkThread );
 	m_network.SetListener( *this );
 		

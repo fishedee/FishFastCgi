@@ -85,42 +85,52 @@ void ClientSocket::handleAcceptEvent( int server  ){
 	struct epoll_event epollEvent;
 	
 	Logger::Debug("begin handleAcceptEvent");
-	
-	//accept connection
-	sin_size=sizeof(connection_addr);
-	clientSocket =accept(server,(struct sockaddr *)(&connection_addr),&sin_size);
-	if( clientSocket ==-1){
-		Logger::Err("Accept Error");
-		return;
+	while( true ){
+		//accept connection
+		sin_size=sizeof(connection_addr);
+		clientSocket =accept(server,(struct sockaddr *)(&connection_addr),&sin_size);
+		if( clientSocket == 0 ){
+			Logger::Err("Accept Error");
+			return;
+		}
+		if( clientSocket < 0 ){
+			if( errno == EINPROGRESS ||
+				errno == EAGAIN ||
+				errno == EINTR )
+				break;
+			Logger::Err("Accept Error");
+			return;
+		}
+		
+		//set non-block
+		flags = fcntl(clientSocket, F_GETFL, 0);
+		fcntl(clientSocket, F_SETFL, flags | O_NONBLOCK);
+		
+		//set nodelay
+		if( m_serverSocket.IsUnixSocket() == false ){
+			val = 1;
+			if( setsockopt(clientSocket, IPPROTO_TCP, TCP_NODELAY,&val,sizeof(val)) < 0 ){
+				Logger::Err("Set Socket TCP_NODELAY Error!");
+				continue;
+			}
+		}
+		
+		//create socket data
+		ClientSocketData* data = new ClientSocketData();
+		data->socket = clientSocket;
+		
+		//add client socket to epoll
+		epollEvent.data.ptr  = data;
+		epollEvent.events = EPOLLIN ;
+		iRet = epoll_ctl(m_epollQueue, EPOLL_CTL_ADD,clientSocket,&epollEvent);
+		if( iRet < 0 ){
+			Logger::Err("m_epollQueue EPOLL_CTL_ADD Client Socket Error");
+			handleCloseEvent( data );
+			continue;
+		}
+		
+		m_listener->OnConnected(clientSocket);
 	}
-	
-	//set non-block
-	flags = fcntl(clientSocket, F_GETFL, 0);
-	fcntl(clientSocket, F_SETFL, flags | O_NONBLOCK);
-	
-	//set nodelay
-	val = 1;
-	if( setsockopt(clientSocket, IPPROTO_TCP, TCP_NODELAY,&val,sizeof(val)) < 0 ){
-		Logger::Err("Set Socket TCP_NODELAY Error!");
-		return;
-	}
-	
-	//create socket data
-	ClientSocketData* data = new ClientSocketData();
-	data->socket = clientSocket;
-	
-	//add client socket to epoll
-	epollEvent.data.ptr  = data;
-	epollEvent.events = EPOLLIN ;
-	iRet = epoll_ctl(m_epollQueue, EPOLL_CTL_ADD,clientSocket,&epollEvent);
-	if( iRet < 0 ){
-		Logger::Err("m_epollQueue EPOLL_CTL_ADD Client Socket Error");
-		handleCloseEvent( data );
-		return;
-	}
-	
-	m_listener->OnConnected(clientSocket);
-	
 	Logger::Debug("end handleAcceptEvent");
 }
 void ClientSocket::handleReadEvent( ClientSocketData* data ){
@@ -157,7 +167,7 @@ void ClientSocket::handleReadEvent( ClientSocketData* data ){
 		//have something to write
 		if( data->writeData.size() != 0 ){
 			epollEvent.data.ptr  = data;
-			epollEvent.events = EPOLLIN | EPOLLOUT ;
+			epollEvent.events = EPOLLIN | EPOLLOUT;
 			iRet = epoll_ctl(m_epollQueue, EPOLL_CTL_MOD,data->socket,&epollEvent);
 			if( iRet < 0 ){
 				Logger::Err("m_epollQueue EPOLL_CTL_MOD Client Socket Error");

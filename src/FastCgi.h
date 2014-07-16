@@ -22,6 +22,7 @@ public:
 	
 public:
 	void SetNetworkPort( uint16_t dwPort );
+	void SetNetworkUnixAddress( const std::string& strAddress );
 	void SetNetworkThread( uint32_t dwNetworkThread );
 	void SetProcess( uint32_t dwProcess );
 	void SetCallBack( const CallBackFun& callback );
@@ -31,9 +32,11 @@ public:
 	void OnRequest( const FastCgiRequest&request , FastCgiResponse& response );
 	
 private:
+	bool isUnixSocket;
 	uint16_t m_dwPort;
 	uint32_t m_dwProcess;
 	uint32_t m_dwNetworkThread;
+	std::string m_strAddress;
 	FastCgi::CallBackFun m_callback;
 
 };

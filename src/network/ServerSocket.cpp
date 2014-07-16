@@ -69,10 +69,56 @@ int32_t ServerSocket::ListenPort( uint16_t dwPort ){
 		Logger::Err("Listen Socket Error!");
 		return 1;
 	}
+	
+	m_isUnixSocket = false;
+	return 0;
+}
+int32_t ServerSocket::ListenUnixSokcet( const std::string& strAddress ){
+	int val;
+	struct sockaddr_un  serverAddIn;
+	socklen_t serverAddrLen;
+	int flags;
+	
+	unlink(strAddress.c_str());
+	
+	memset(&serverAddIn, 0, sizeof(serverAddIn));
+	serverAddIn.sun_family = AF_UNIX;
+	strcpy(serverAddIn.sun_path, strAddress.c_str() ); 
+	serverAddrLen = sizeof(serverAddIn);
+		
+	m_serverSocket = socket(AF_UNIX, SOCK_STREAM, 0);
+	if( m_serverSocket == -1 ){
+		Logger::Err("Create Socket Error!");
+		return 1;
+	}
+
+	flags = fcntl(m_serverSocket, F_GETFL, 0);
+	fcntl(m_serverSocket, F_SETFL, flags | O_NONBLOCK);
+	
+	val = 1;
+	if (setsockopt(m_serverSocket, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) < 0) {
+		Logger::Err("Set Socket ReuseAddr Error!");
+		return 1;
+	}
+
+	if (-1 == bind(m_serverSocket, (sockaddr*)&serverAddIn, serverAddrLen)) {
+		Logger::Err("Bind Socket Error!");
+		return 1;
+	}
+
+	if (-1 == listen(m_serverSocket, 5)) {
+		Logger::Err("Listen Socket Error!");
+		return 1;
+	}
+	
+	m_isUnixSocket = true;
 	return 0;
 }
 int ServerSocket::GetSocket(){
 	return m_serverSocket;
+}
+bool ServerSocket::IsUnixSocket(){
+	return m_isUnixSocket;
 }
 
 }

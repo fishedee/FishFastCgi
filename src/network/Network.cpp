@@ -15,6 +15,9 @@ Network::~Network(){
 void Network::ListenPort( uint16_t dwPort ){
 	m_serverSocket.ListenPort( dwPort );
 }
+void Network::ListenUnixAddress( const std::string& strAddress ){
+	m_serverSocket.ListenUnixSokcet( strAddress );
+}
 void Network::SetClientThread( uint32_t dwThread ){
 	m_dwThread = dwThread;
 }
