@@ -16,10 +16,11 @@ void Logger::Err( const std::string& strLog ){
 void Logger::Info( const std::string& strLog ){
 	fprintf(stdout,"%s\n",strLog.c_str());
 }
-
+/*
 void Logger::Debug( const std::string& strLog ){
 	fprintf(stdout,"%s\n",strLog.c_str());
 }
+*/
 
 }
 }

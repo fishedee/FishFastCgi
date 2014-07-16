@@ -19,30 +19,33 @@ void FastCgiSocket::SetRequestListener( FastCgiSocketListener& listener ){
 	m_listener = &listener;
 }
 int32_t FastCgiSocket::Run(){
+	Logger::Debug("FastCgiSocket Run!");
 	return m_clientSocket.Run();
 }
 void FastCgiSocket::OnConnected( int socket ){
 }
 void FastCgiSocket::OnRead( int socket , std::string& request , std::string& response ){
 	uint32_t nReadSize = 0;
+	uint32_t nTotalSize = request.size();
 	const char* headerBuffer = request.c_str();
 	
 	//read data
 	while( true ){
 	
-		if( request.size() < 8 )
-			return;
+		if( nTotalSize < 8 )
+			break;
 		
-		uint16_t contentLength = ( ((uint8_t)request[4]) << 8 ) + (uint8_t)request[5];
-		uint8_t paddingLength = (uint8_t)request[6];
+		uint16_t contentLength = ( ((uint8_t)headerBuffer[4]) << 8 ) + (uint8_t)headerBuffer[5];
+		uint8_t paddingLength = (uint8_t)headerBuffer[6];
 		
-		if( request.size() < (uint32_t)(8 + contentLength + paddingLength) )
-			return ;
+		if( nTotalSize < (uint32_t)(8 + contentLength + paddingLength) )
+			break ;
 			
 		ReadHeader(socket,headerBuffer , response);
 		
 		nReadSize += 8 + contentLength + paddingLength;
 		headerBuffer += 8 + contentLength + paddingLength;
+		nTotalSize -= 8 + contentLength + paddingLength;
 	}
 	
 	//remove data what have readed
@@ -72,6 +75,8 @@ void FastCgiSocket::ReadHeader( int socket , const char* buffer , std::string& r
 	header->content = new uint8_t[header->contentLength];
 	memcpy( header->content , buffer + 8 , header->contentLength );
 	
+	Logger::Debug("Read Header " + std::to_string(header->type) + "," +  std::to_string(header->contentLength) + "," + std::to_string(header->paddingLength));
+	
 	if( header->type == FCGI_GET_VALUES ){
 		ReadGetValues( socket , header );
 		delete[] header->content;
@@ -81,6 +86,7 @@ void FastCgiSocket::ReadHeader( int socket , const char* buffer , std::string& r
 		//on read stdin finish
 		if( header->type == FCGI_STDIN && header->contentLength == 0 ){
 			ReadStdInFinish( socket , header->requestId , response );
+			CloseRequest(socket,header->requestId);
 		}
 	}
 }
@@ -89,8 +95,10 @@ void FastCgiSocket::ReadStdInFinish( int socket , uint16_t requestId , std::stri
 	FastCgiResponse response;
 	int32_t iRet;
 	
+	Logger::Debug("ReadStdInFinish Begin!");
+	
 	iRet = m_protocol.DeSerializeRequest( m_mapHeaderList[socket][requestId] , request );
-	if( iRet != 0 )
+	if( iRet != 0 )	
 		return;
 	
 	response.SetRequestId( request.GetRequestId() );
@@ -99,8 +107,8 @@ void FastCgiSocket::ReadStdInFinish( int socket , uint16_t requestId , std::stri
 	iRet = m_protocol.SerializeResponse( response , strResponse );
 	if( iRet != 0 )
 		return;
-		
-	CloseRequest(socket,requestId);
+	
+	Logger::Debug("ReadStdInFinish End!");
 	
 	return;
 }
@@ -120,6 +128,7 @@ void FastCgiSocket::CloseRequest( int socket , uint16_t requestId ){
 		delete[] (*it)->content;
 		delete (*it);
 	}
+	m_mapHeaderList[socket].erase(requestId);
 }
 	
 }

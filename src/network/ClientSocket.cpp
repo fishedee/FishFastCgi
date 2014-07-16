@@ -2,7 +2,9 @@
 #include "comm/Logger.h"
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <string>
 
+using namespace std;
 using namespace fish::fastcgi::comm;
 
 namespace fish{
@@ -34,6 +36,8 @@ int32_t ClientSocket::Run(){
 	ClientSocketData* data = new ClientSocketData();
 	data->socket = m_serverSocket.GetSocket();
 	
+	Logger::Debug("server " + to_string(m_serverSocket.GetSocket()));
+	
 	//add server socket to epoll
 	epollEvent.data.ptr  = data;
 	epollEvent.events = EPOLLIN ;
@@ -54,6 +58,8 @@ int32_t ClientSocket::Run(){
 		
 		for( i = 0 ; i != nepollEvent ; ++i ){
 			data = (ClientSocketData*)m_activeEvents[i].data.ptr;
+			
+			Logger::Debug("active socket " + to_string(data->socket));
 			
 			if( ( m_activeEvents[i].events & EPOLLIN  ) && 
 				data->socket == m_serverSocket.GetSocket() ){
@@ -77,6 +83,8 @@ void ClientSocket::handleAcceptEvent( int server  ){
 	int flags;
 	int val,iRet;
 	struct epoll_event epollEvent;
+	
+	Logger::Debug("begin handleAcceptEvent");
 	
 	//accept connection
 	sin_size=sizeof(connection_addr);
@@ -112,10 +120,14 @@ void ClientSocket::handleAcceptEvent( int server  ){
 	}
 	
 	m_listener->OnConnected(clientSocket);
+	
+	Logger::Debug("end handleAcceptEvent");
 }
 void ClientSocket::handleReadEvent( ClientSocketData* data ){
 	int iRet;
 	struct epoll_event epollEvent;
+	
+	Logger::Debug("begin handleReadEvent");
 	
 	while( true ){
 		//read data
@@ -123,14 +135,16 @@ void ClientSocket::handleReadEvent( ClientSocketData* data ){
 		if( iRet == 0 ){
 			Logger::Err("read data from socket error");
 			handleCloseEvent( data );
-			break;
+			return;
 		}
 		if( iRet < 0 ){
-			if( errno == EINPROGRESS )
+			if( errno == EINPROGRESS ||
+				errno == EAGAIN ||
+				errno == EINTR )
 				break;
 			Logger::Err("read data from socket error");
 			handleCloseEvent( data );
-			break;
+			return;
 		}
 		data->readData.append( m_readBuffer , m_readBuffer + iRet );
 	}
@@ -152,6 +166,8 @@ void ClientSocket::handleReadEvent( ClientSocketData* data ){
 			}		
 		}
 	}
+	
+	Logger::Debug("end handleReadEvent");
 }
 void ClientSocket::handleWriteEvent( ClientSocketData* data ){
 	int writeSize = data->writeData.size();
@@ -159,19 +175,23 @@ void ClientSocket::handleWriteEvent( ClientSocketData* data ){
 	int iRet;
 	struct epoll_event epollEvent;
 	
+	Logger::Debug("begin handleWriteEvent");
+	
 	while( writeSize != 0 ){
 		iRet = write(data->socket,writeBuffer,writeSize);
 		if( iRet == 0 ){
 			Logger::Err("write data to socket error");
 			handleCloseEvent( data );
-			break;
+			return;
 		}
 		if( iRet < 0 ){
-			if( errno == EINPROGRESS )
+			if( errno == EINPROGRESS ||
+				errno == EAGAIN ||
+				errno == EINTR )
 				break;
 			Logger::Err("write data to socket error");
 			handleCloseEvent( data );
-			break;
+			return;
 		}
 		writeBuffer += writeSize;
 		writeSize -= iRet;
@@ -188,9 +208,13 @@ void ClientSocket::handleWriteEvent( ClientSocketData* data ){
 			return;
 		}
 	}
+	
+	Logger::Debug("end handleWriteEvent");
 }
 void ClientSocket::handleCloseEvent( ClientSocketData* data ){
 	struct epoll_event epollEvent;
+	
+	Logger::Debug("begin handleCloseEvent");
 	
 	//notice listener to close
 	m_listener->OnClose( data->socket );
@@ -205,6 +229,8 @@ void ClientSocket::handleCloseEvent( ClientSocketData* data ){
 	
 	//remove data
 	delete data;
+	
+	Logger::Debug("end handleCloseEvent");
 }
 
 	

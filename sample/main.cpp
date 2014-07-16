@@ -21,10 +21,13 @@ void go( const FastCgiRequest& request , FastCgiResponse& response ){
 	printf("\n");
 	*/
 	
+	
 	response.SetOut(
 		"Content-type: text/html \r\n\r\n"
 		"<html><head></head><body>Hello World!</body><html>\n"
 	);
+	
+	//response.SetOut("Hello World");
 	response.SetProtocolStatus(200);
 	response.SetAppStatus(0);
 }

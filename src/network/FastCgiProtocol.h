@@ -100,9 +100,7 @@ private:
 	int32_t DeSerializeBeginRequest( const FCGI_Header* headerList, FastCgiRequest& request );
 	
 	int32_t SerializeEndRequest( const FastCgiResponse& response , std::string& strResponse );
-	int32_t SerializeStdOut( const FastCgiResponse& response , std::string& strResponse );
-	int32_t SerializeStdErr( const FastCgiResponse& response , std::string& strResponse );
-	int32_t SerializeData( const FastCgiResponse& response , std::string& strResponse );
+	int32_t SerializeData( const char* data , uint32_t size , uint8_t type , uint16_t requestId , std::string& strResponse );
 	
 	int32_t SerializeHeader( FCGI_Header& header , std::string& strResponse );
 	int32_t SerializePadding( FCGI_Header& header , std::string& strResponse );

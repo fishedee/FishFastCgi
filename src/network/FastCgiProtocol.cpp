@@ -28,7 +28,7 @@ int32_t FastCgiProtocol::DeSerializeRequest( const std::list<FCGI_Header*>& head
 		}else if( (*it)->type == FCGI_PARAMS ){
 			iRet = DeSerializeParams( *it , request );
 		}else{
-			Logger::Err("UnKnown header type");
+			Logger::Err("UnKnown header type " + (*it)->type);
 			iRet = 1;
 		}
 		
@@ -41,17 +41,23 @@ int32_t FastCgiProtocol::DeSerializeRequest( const std::list<FCGI_Header*>& head
 int32_t FastCgiProtocol::SerializeResponse( const FastCgiResponse& response , std::string& strResponse ){
 	int32_t iRet;
 		
-	iRet = SerializeStdOut( response , strResponse );
-	if( iRet != 0 )
-		return iRet;
+	if( response.GetOut().size() != 0 ){
+		iRet = SerializeData( response.GetOut().c_str() , response.GetOut().size() ,FCGI_STDOUT, response.GetRequestId() , strResponse );
+		if( iRet != 0 )
+			return iRet;
+	}
+	
+	if( response.GetErr().size() != 0 ){
+		iRet = SerializeData( response.GetErr().c_str()  , response.GetErr().size() ,FCGI_STDERR, response.GetRequestId() ,strResponse );
+		if( iRet != 0 )
+			return iRet;
+	}
 		
-	iRet = SerializeStdErr( response , strResponse );
-	if( iRet != 0 )
-		return iRet;
-		
-	iRet = SerializeData( response , strResponse );
-	if( iRet != 0 )
-		return iRet;
+	if( response.GetData().size() != 0 ){
+		iRet = SerializeData( response.GetData().c_str()  , response.GetData().size() ,FCGI_DATA, response.GetRequestId() ,strResponse );
+		if( iRet != 0 )
+			return iRet;
+	}
 		
 	iRet = SerializeEndRequest( response , strResponse );
 	if( iRet != 0 )
@@ -88,7 +94,7 @@ int32_t FastCgiProtocol::SerializeGetValuesResult( uint16_t requestId , const st
 	}
 
 	FCGI_Header header;
-	header.version = 0;
+	header.version = 1;
 	header.type = FCGI_GET_VALUES_RESULT;
 	header.requestId = requestId;
 	header.contentLength = strBuffer.size();
@@ -179,7 +185,7 @@ int32_t FastCgiProtocol::SerializeEndRequest( const FastCgiResponse& response , 
 	int32_t iRet;
 	
 	FCGI_Header header;
-	header.version = 0;
+	header.version = 1;
 	header.type = FCGI_END_REQUEST;
 	header.requestId = response.GetRequestId();
 	header.contentLength = 8;
@@ -202,19 +208,18 @@ int32_t FastCgiProtocol::SerializeEndRequest( const FastCgiResponse& response , 
 	
 	return 0;
 }
-
-int32_t FastCgiProtocol::SerializeStdOut( const FastCgiResponse& response , std::string& strResponse ){
+int32_t FastCgiProtocol::SerializeData( const char* data ,uint32_t size , uint8_t type , uint16_t requestId , std::string& strResponse ){
 	int32_t iRet;
-	uint8_t* buffer = (uint8_t*)response.GetOut().c_str();
-	uint32_t length = response.GetOut().size();
+	uint8_t* buffer = (uint8_t*)data;
+	uint32_t length = size;
 	
 	while( length != 0 ){
 		uint16_t writeSize = length < SHRT_MAX ? length : SHRT_MAX;
 		
 		FCGI_Header header;
-		header.version = 0;
-		header.type = FCGI_STDOUT;
-		header.requestId = response.GetRequestId();
+		header.version = 1;
+		header.type = type;
+		header.requestId = requestId;
 		header.contentLength = writeSize;
 		header.reserved = 0;
 		iRet = SerializeHeader( header , strResponse );
@@ -230,64 +235,17 @@ int32_t FastCgiProtocol::SerializeStdOut( const FastCgiResponse& response , std:
 		buffer += writeSize;
 		length -= writeSize;
 	}
-	return 0;
-}
-int32_t FastCgiProtocol::SerializeStdErr( const FastCgiResponse& response , std::string& strResponse ){
-	int32_t iRet;
-	uint8_t* buffer = (uint8_t*)response.GetErr().c_str();
-	uint32_t length = response.GetErr().size();
 	
-	while( length != 0 ){
-		uint16_t writeSize = length < SHRT_MAX ? length : SHRT_MAX;
-		
-		FCGI_Header header;
-		header.version = 0;
-		header.type = FCGI_STDERR;
-		header.requestId = response.GetRequestId();
-		header.contentLength = writeSize;
-		header.reserved = 0;
-		iRet = SerializeHeader( header , strResponse );
-		if( iRet != 0 )
-			return iRet;
-			
-		strResponse.append( buffer , buffer + writeSize );
-		
-		iRet = SerializePadding( header , strResponse );
-		if( iRet != 0 )
-			return iRet;
-		
-		buffer += writeSize;
-		length -= writeSize;
-	}
-	return 0;
-}
-int32_t FastCgiProtocol::SerializeData( const FastCgiResponse& response , std::string& strResponse ){
-	int32_t iRet;
-	uint8_t* buffer = (uint8_t*)response.GetData().c_str();
-	uint32_t length = response.GetData().size();
+	FCGI_Header header;
+	header.version = 1;
+	header.type = type;
+	header.requestId = requestId;
+	header.contentLength = 0;
+	header.reserved = 0;
+	iRet = SerializeHeader( header , strResponse );
+	if( iRet != 0 )
+		return iRet;
 	
-	while( length != 0 ){
-		uint16_t writeSize = length < SHRT_MAX ? length : SHRT_MAX;
-		
-		FCGI_Header header;
-		header.version = 0;
-		header.type = FCGI_DATA;
-		header.requestId = response.GetRequestId();
-		header.contentLength = writeSize;
-		header.reserved = 0;
-		iRet = SerializeHeader( header , strResponse );
-		if( iRet != 0 )
-			return iRet;
-			
-		strResponse.append( buffer , buffer + writeSize );
-		
-		iRet = SerializePadding( header , strResponse );
-		if( iRet != 0 )
-			return iRet;
-		
-		buffer += writeSize;
-		length -= writeSize;
-	}
 	return 0;
 }
 

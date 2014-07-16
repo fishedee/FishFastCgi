@@ -4,8 +4,9 @@ LIB := -L../src -lfishfcgi -lpthread
 OUT := fastcgi
 OBJ := $(notdir $(patsubst %.cpp,%.o,$(SRC)))
 CXXFLAGS := -ggdb -std=c++0x -Wall -O3
-.PHONY:all clean
+.PHONY:all clean $(OUT)
 all:
+	cd ../src&&$(MAKE)
 	$(MAKE) .depend
 	$(MAKE) $(OUT)
 

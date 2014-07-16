@@ -12,7 +12,8 @@ public:
 	static int32_t Init();
 	static void Err( const std::string& strLog );
 	static void Info( const std::string& strLog );
-	static void Debug( const std::string& strLog );
+	static void Debug( const std::string& strLog ){
+	}
 };
 
 }
