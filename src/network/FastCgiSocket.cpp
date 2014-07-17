@@ -10,6 +10,7 @@ namespace network{
 
 FastCgiSocket::FastCgiSocket( ClientSocket& clientSocket )
 	:m_clientSocket(clientSocket){
+	Logger::Debug("FastCgiSocket construct() "+std::to_string((int64_t)(void*)&m_clientSocket));
 	m_clientSocket.SetListener( *this );
 	
 }
@@ -21,6 +22,10 @@ void FastCgiSocket::SetRequestListener( FastCgiSocketListener& listener ){
 int32_t FastCgiSocket::Run(){
 	Logger::Debug("FastCgiSocket Run!");
 	return m_clientSocket.Run();
+}
+ClientSocket* FastCgiSocket::GetClientSocket(){
+	Logger::Debug("FastCgiSocket GetClientSocket() "+std::to_string((int64_t)(void*)&m_clientSocket));
+	return &m_clientSocket;
 }
 ClientSocketData* FastCgiSocket::OnConnected(){
 	FastCgiSocketData* data = new FastCgiSocketData();

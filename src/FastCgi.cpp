@@ -1,6 +1,7 @@
 #include "FastCgi.h"
 #include "network/Network.h"
 #include "comm/Logger.h"
+#include "comm/Config.h"
 
 #include <unistd.h>
 #include<sys/types.h>
@@ -83,6 +84,9 @@ int32_t FastCgi::Run(){
 		}
 	}
 	
+	//设置开始运行
+	Config::SetIsRun( true );
+	
 	//启动网络循环
 	iRet = m_network.Run();
 	if( iRet != 0 )
@@ -90,7 +94,10 @@ int32_t FastCgi::Run(){
 	
 	Logger::Info("init success!I am working!");
 	
-	pthread_exit(NULL);
+	//等待网络退出
+	m_network.Wait();
+	
+	Logger::Info("run success!I have exit!");
 	return 0;
 }
 void FastCgi::OnRequest( const FastCgiRequest&request , FastCgiResponse& response ){

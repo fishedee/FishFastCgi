@@ -13,6 +13,7 @@ public:
 	static void Err( const std::string& strLog );
 	static void Info( const std::string& strLog );
 	static void Debug( const std::string& strLog ){
+		//fprintf(stdout,"%s\n",strLog.c_str());
 	}
 };
 

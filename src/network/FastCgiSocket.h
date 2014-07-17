@@ -26,11 +26,12 @@ public:
 class FastCgiSocket:public ClientSocketListener{
 public:
 	FastCgiSocket( ClientSocket& clientSocket );
-	~FastCgiSocket();
+	virtual ~FastCgiSocket();
 
 public:
 	void SetRequestListener( FastCgiSocketListener& listener );
 	int32_t Run();
+	ClientSocket* GetClientSocket();
 
 public:
 	ClientSocketData* OnConnected();
@@ -41,8 +42,9 @@ public:
 	
 private:
 	FastCgiSocketListener* m_listener;
+	ClientSocket& m_clientSocket;
 	FastCgiProtocol m_protocol;
-	ClientSocket m_clientSocket;
+	
 };
 
 }

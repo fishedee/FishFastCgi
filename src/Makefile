@@ -3,7 +3,7 @@ INC := -I../src
 LIB := -lpthread third_party/jemalloc-3.6.0/lib/libjemalloc.a
 OUT := libfishfcgi.a
 OBJ := $(notdir $(patsubst %.cpp,%.o,$(SRC)))
-CXXFLAGS := -ggdb -std=c++0x -Wall -O3
+CXXFLAGS := -ggdb -std=c++0x -Wall -O3 -DNDEBUG
 .PHONY:all clean .depend
 all:
 	$(MAKE) .depend

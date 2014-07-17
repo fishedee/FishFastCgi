@@ -11,6 +11,14 @@ namespace network{
 Network::Network(){
 }
 Network::~Network(){
+	for( uint32_t i = 0 ; i != m_dwThread ; ++i ){
+		ClientSocket* clientSocket = m_vecClientSockets[i]->GetClientSocket();
+		FastCgiSocket* fastcgiSocket = m_vecClientSockets[i];
+		Logger::Debug("ClientSocket Delete "+std::to_string((int64_t)(void*)clientSocket));
+		Logger::Debug("ClientSocket Delete "+std::to_string((int64_t)(void*)fastcgiSocket));
+		delete fastcgiSocket;
+		delete clientSocket;
+	}
 }
 void Network::ListenPort( uint16_t dwPort ){
 	m_serverSocket.ListenPort( dwPort );
@@ -31,30 +39,32 @@ int32_t Network::Run(){
 	//init client Sockets
 	for( uint32_t i = 0 ; i != m_dwThread ; ++i ){
 	
-		ClientSocket clientSocket( m_serverSocket );
-		FastCgiSocket fastcgiSocket( clientSocket );
+		ClientSocket* clientSocket = new ClientSocket( m_serverSocket );
+		FastCgiSocket* fastcgiSocket = new FastCgiSocket( *clientSocket );
 		
-		fastcgiSocket.SetRequestListener(*this);
+		Logger::Debug("ClientSocket New "+std::to_string((int64_t)(void*)clientSocket));
+		Logger::Debug("ClientSocket New "+std::to_string((int64_t)(void*)fastcgiSocket));
+		fastcgiSocket->SetRequestListener(*this);
 		
 		m_vecClientSockets.push_back( fastcgiSocket );
 	}
 	
 	//run client socket
-	for( uint32_t i = 1 ; i != m_dwThread ; ++i ){
-		iRet = pthread_create( &tid , NULL , &Network::ThreadHelper , &m_vecClientSockets[i] );
+	for( uint32_t i = 0 ; i != m_dwThread ; ++i ){
+		iRet = pthread_create( &tid , NULL , &Network::ThreadHelper , m_vecClientSockets[i] );
 		if( iRet != 0 ){
 			Logger::Err("pthread_create error!");
 			return 1;
 		}
 
-		iRet = pthread_detach( tid );
-		if( iRet != 0 ){
-			Logger::Err("pthread_detach error!");
-			return 2;
-		}
+		m_vecThread.push_back( tid );
 	}
 	
-	ThreadHelper( &m_vecClientSockets[0] );
+	return 0;
+}
+int32_t Network::Wait(){
+	for( uint32_t i = 0 ; i != m_dwThread ; ++i )
+		pthread_join( m_vecThread[i] , NULL );
 	return 0;
 }
 void Network::OnRequest( const FastCgiRequest&request , FastCgiResponse& response ){

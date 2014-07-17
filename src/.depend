@@ -1,9 +1,9 @@
 FastCgi.o: FastCgi.cpp FastCgi.h FastCgiRequest.h FastCgiResponse.h \
  network/Network.h network/ServerSocket.h network/ClientSocket.h \
  network/FastCgiSocket.h ../src/FastCgiRequest.h ../src/FastCgiResponse.h \
- network/FastCgiProtocol.h comm/Logger.h
+ network/FastCgiProtocol.h comm/Logger.h comm/Config.h
 ClientSocket.o: network/ClientSocket.cpp network/ClientSocket.h \
- network/ServerSocket.h ../src/comm/Logger.h
+ network/ServerSocket.h ../src/comm/Logger.h ../src/comm/Config.h
 FastCgiProtocol.o: network/FastCgiProtocol.cpp network/FastCgiProtocol.h \
  ../src/FastCgiRequest.h ../src/FastCgiResponse.h ../src/comm/Logger.h
 FastCgiSocket.o: network/FastCgiSocket.cpp network/FastCgiSocket.h \
@@ -14,4 +14,5 @@ Network.o: network/Network.cpp network/Network.h network/ServerSocket.h \
  ../src/FastCgiResponse.h network/FastCgiProtocol.h ../src/comm/Logger.h
 ServerSocket.o: network/ServerSocket.cpp network/ServerSocket.h \
  ../src/comm/Logger.h
+Config.o: comm/Config.cpp comm/Config.h
 Logger.o: comm/Logger.cpp comm/Logger.h

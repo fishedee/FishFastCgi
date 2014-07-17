@@ -30,6 +30,7 @@ public:
 	void SetClientThread( uint32_t dwThread );
 	void SetListener( NetworkListener& listener );
 	int32_t Run();
+	int32_t Wait();
 	
 public:
 	void OnRequest( const FastCgiRequest&request , FastCgiResponse& response );
@@ -40,7 +41,8 @@ private:
 public:
 	uint32_t m_dwThread;
 	NetworkListener* m_listener;
-	std::vector<FastCgiSocket> m_vecClientSockets;
+	std::vector<FastCgiSocket*> m_vecClientSockets;
+	std::vector<pthread_t> m_vecThread;
 	ServerSocket m_serverSocket;
 	
 };

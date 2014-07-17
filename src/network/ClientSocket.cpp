@@ -1,8 +1,10 @@
 #include "ClientSocket.h"
 #include "comm/Logger.h"
+#include "comm/Config.h"
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <string>
+#include <assert.h>
 
 using namespace std;
 using namespace fish::fastcgi::comm;
@@ -48,10 +50,15 @@ int32_t ClientSocket::Run(){
 	}
 	
 	//go
-	while( true ){
+	while( Config::GetIsRun() ){
 		//get active event
-		nepollEvent = epoll_wait(m_epollQueue,m_activeEvents,CLIENT_SOCKET_ACTIVE_EVENT,-1);
+		nepollEvent = epoll_wait(m_epollQueue,m_activeEvents,CLIENT_SOCKET_ACTIVE_EVENT,1000);
 		if( nepollEvent <= 0 ){
+			if( errno == EINPROGRESS ||
+				errno == EAGAIN ||
+				errno == EINTR  ||
+				nepollEvent == 0 )
+				continue;
 			Logger::Err("epoll_wait error!");
 			return 3;
 		}
@@ -72,7 +79,10 @@ int32_t ClientSocket::Run(){
 		}
 	}
 	
+	Logger::Debug("Client Socket Exit!");
+	
 	//close
+	delete data;
 	close(m_epollQueue);
 	return 0;
 }
@@ -114,6 +124,8 @@ void ClientSocket::handleAcceptEvent( int server  ){
 				continue;
 			}
 		}
+		
+		Logger::Debug("m_listener " + to_string((int64_t)(void*)m_listener));
 		
 		//create socket data
 		ClientSocketData* data;

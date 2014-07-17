@@ -65,7 +65,7 @@ int32_t ServerSocket::ListenPort( uint16_t dwPort ){
 		return 1;
 	}
 
-	if (-1 == listen(m_serverSocket, 5)) {
+	if (-1 == listen(m_serverSocket, 128)) {
 		Logger::Err("Listen Socket Error!");
 		return 1;
 	}
