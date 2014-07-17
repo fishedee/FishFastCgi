@@ -88,7 +88,7 @@ public:
 	~FastCgiProtocol();
 	
 public:
-	int32_t DeSerializeRequest( const std::list<FCGI_Header*>& headerList, FastCgiRequest& request );
+	int32_t DeSerializeRequest( const char* data , FastCgiRequest& request );
 	int32_t SerializeResponse( const FastCgiResponse& response , std::string& strResponse );
 	int32_t DeSerializeGetValues( const FCGI_Header* header , FastCgiRequest& request );
 	int32_t SerializeGetValuesResult( uint16_t requestId , const std::map<std::string,std::string>& response , std::string& strResponse );

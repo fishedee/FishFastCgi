@@ -116,7 +116,8 @@ void ClientSocket::handleAcceptEvent( int server  ){
 		}
 		
 		//create socket data
-		ClientSocketData* data = new ClientSocketData();
+		ClientSocketData* data;
+		data = m_listener->OnConnected();
 		data->socket = clientSocket;
 		
 		//add client socket to epoll
@@ -129,7 +130,7 @@ void ClientSocket::handleAcceptEvent( int server  ){
 			continue;
 		}
 		
-		m_listener->OnConnected(clientSocket);
+		
 	}
 	Logger::Debug("end handleAcceptEvent");
 }
@@ -160,9 +161,7 @@ void ClientSocket::handleReadEvent( ClientSocketData* data ){
 	}
 	if( data->readData.size() != 0 ){
 		//notice program to read
-		std::string writeData;
-		m_listener->OnRead( data->socket , data->readData ,writeData );
-		data->writeData.append( writeData );
+		m_listener->OnRead( data );
 		
 		//have something to write
 		if( data->writeData.size() != 0 ){
@@ -226,9 +225,6 @@ void ClientSocket::handleCloseEvent( ClientSocketData* data ){
 	
 	Logger::Debug("begin handleCloseEvent");
 	
-	//notice listener to close
-	m_listener->OnClose( data->socket );
-	
 	//remove socket from epoll
 	epollEvent.data.ptr  = data;
 	epollEvent.events = EPOLLIN | EPOLLOUT ;
@@ -237,8 +233,8 @@ void ClientSocket::handleCloseEvent( ClientSocketData* data ){
 	//remove socket
 	close(data->socket);
 	
-	//remove data
-	delete data;
+	//notice listener to close
+	m_listener->OnClose( data );
 	
 	Logger::Debug("end handleCloseEvent");
 }

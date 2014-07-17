@@ -14,28 +14,32 @@ FastCgiProtocol::FastCgiProtocol(){
 FastCgiProtocol::~FastCgiProtocol(){
 }
 
-int32_t FastCgiProtocol::DeSerializeRequest( const std::list<FCGI_Header*>& headerList, FastCgiRequest& request ){
-	int32_t iRet;
+int32_t FastCgiProtocol::DeSerializeRequest( const char* buffer, FastCgiRequest& request ){
+	FCGI_Header header;
 	
-	for( std::list<FCGI_Header*>::const_iterator it = headerList.begin();
-		it != headerList.end() ; ++it ){
-		if( (*it)->type == FCGI_BEGIN_REQUEST ){
-			iRet = DeSerializeBeginRequest( *it , request );
-		}else if( (*it)->type == FCGI_STDIN ){
-			iRet = DeSerializeStdIn( *it , request );
-		}else if( (*it)->type == FCGI_DATA ){
-			iRet = DeSerializeData( *it , request );
-		}else if( (*it)->type == FCGI_PARAMS ){
-			iRet = DeSerializeParams( *it , request );
-		}else{
-			Logger::Err("UnKnown header type " + (*it)->type);
-			iRet = 1;
-		}
+	header.version = buffer[0];
+	header.type = buffer[1];
+	header.requestId = (buffer[2] << 8) + buffer[3];
+	header.contentLength = (buffer[4] << 8) + buffer[5];
+	header.paddingLength = buffer[6];
+	header.reserved = buffer[7];
+	header.content = (uint8_t*)&buffer[8];
+	
+	if( header.type == FCGI_STDIN && header.contentLength == 0  )
+		return 0;
 		
-		if( iRet != 0 )
-			return iRet;
-	}
-	return 0;
+	if( header.type == FCGI_BEGIN_REQUEST )
+		DeSerializeBeginRequest( &header , request );
+	else if( header.type == FCGI_STDIN )
+		DeSerializeStdIn( &header , request );
+	else if( header.type == FCGI_DATA )
+		DeSerializeData( &header ,request );
+	else if( header.type == FCGI_PARAMS )
+		DeSerializeParams( &header ,request );
+	else
+		Logger::Err("UnKnown header type " + std::to_string(header.type) );
+	
+	return 1;
 }
 
 int32_t FastCgiProtocol::SerializeResponse( const FastCgiResponse& response , std::string& strResponse ){

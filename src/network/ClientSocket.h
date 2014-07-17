@@ -32,9 +32,9 @@ public:
 
 class ClientSocketListener{
 public:
-	virtual void OnConnected( int socket ) = 0;
-	virtual void OnRead( int socket , std::string& request , std::string& response ) = 0;
-	virtual void OnClose( int socket ) = 0;
+	virtual ClientSocketData* OnConnected() = 0;
+	virtual void OnRead( ClientSocketData* data ) = 0;
+	virtual void OnClose( ClientSocketData* data ) = 0;
 };
 
 class ClientSocket{

@@ -12,6 +12,7 @@ class FastCgiRequest{
 
 public:
 	FastCgiRequest(){
+		Clear();
 	}
 	
 	~FastCgiRequest(){
@@ -94,6 +95,13 @@ public:
 	
 	std::string& GetData(){
 		return m_strData;
+	}
+	
+public:
+	void Clear(){
+		m_mapParams.clear();
+		m_strData.clear();
+		m_strStdIn.clear();
 	}
 	
 private:

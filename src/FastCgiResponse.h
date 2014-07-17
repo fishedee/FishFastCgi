@@ -12,8 +12,7 @@ class FastCgiResponse{
 
 public:
 	FastCgiResponse(){
-		m_protocolStatus = 200;
-		m_appStatus = 0;
+		Clear();
 	}
 	
 	~FastCgiResponse(){
@@ -96,6 +95,15 @@ public:
 	
 	std::string& GetErr(){
 		return m_strErr;
+	}
+	
+public:
+	void Clear(){
+		m_strErr.clear();
+		m_strOut.clear();
+		m_strData.clear();
+		m_protocolStatus = 200;
+		m_appStatus = 0;
 	}
 	
 private:
