@@ -1,7 +1,6 @@
 SRC := main.cpp
 INC := -I../src
-#LIB := -L../src -L../src/third_party/jemalloc-3.6.0/lib/ -static -lfishfcgi -ljemalloc -lpthread
-LIB := -L../src -L../src/third_party/jemalloc-3.6.0/lib/ -static -lfishfcgi -lpthread
+LIB := -L../src -L../src/third_party/jemalloc-3.6.0/lib/ -static -lfishfcgi -ljemalloc -lpthread
 OUT := fastcgi
 OBJ := $(notdir $(patsubst %.cpp,%.o,$(SRC)))
 CXXFLAGS := -ggdb -std=c++0x -Wall -pg
